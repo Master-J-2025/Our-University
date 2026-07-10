@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuestro Universo 💫</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js">
+    </script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js">
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js">
+    </script>
+    <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js">
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0e1a;
+            --bg-card: rgba(15, 20, 40, 0.7);
+            --blue-pastel: #7eb8da;
+            --cyan-bright: #5ce1e6;
+            --white-bright: #e8e8f0;
+            --gold: #f0c060;
+            --rose: #e888a0;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-deep);
+            color: var(--white-bright);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        .font-script {
+            font-family: 'Dancing Script', cursive;
+        }
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.25rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 40px rgba(92, 225, 230, 0.08);
+            transform: translateY(-2px);
+        }
+        .star-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+            opacity: 0;
+        }
+        @keyframes twinkle {
+            0%,
+            100% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.8);
+            }
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0) translateX(0);
+            }
+            25% {
+                transform: translateY(-15px) translateX(8px);
+            }
+            50% {
+                transform: translateY(-8px) translateX(-5px);
+            }
+            75% {
+                transform: translateY(-20px) translateX(3px);
+            }
+        }
+        @keyframes pulse-glow {
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(92, 225, 230, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(92, 225, 230, 0.7), 0 0 80px rgba(240, 192, 96, 0.3);
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes envelopeOpen {
+            0% {
+                transform: rotateX(0deg);
+            }
+            30% {
+                transform: rotateX(-60deg);
+            }
+            60% {
+                transform: rotateX(-20deg);
+            }
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+        @keyframes ripple {
+            0% {
+                box-shadow: 0 0 0 0 rgba(92, 225, 230, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 0 30px rgba(92, 225, 230, 0);
+            }
+        }
+        .animate-slideUp {
+            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2.5s ease-in-out infinite;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        input,
+        textarea,
+        select {
+            background: rgba(20, 25, 50, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 0.75rem;
+            padding: 0.7rem 1rem;
+            color: #e8e8f0;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            width: 100%;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: rgba(92, 225, 230, 0.6);
+            box-shadow: 0 0 20px rgba(92, 225, 230, 0.15);
+            background: rgba(25, 30, 55, 0.7);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        select {
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237eb8da' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b5998 0%, #4a7bc4 30%, #5ce1e6 100%);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.8rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.02em;
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(92, 225, 230, 0.35);
+        }
+        .btn-primary:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(92, 225, 230, 0.25);
+        }
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e8e8f0;
+            padding: 0.6rem 1.4rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .btn-danger {
+            background: rgba(220, 60, 60, 0.2);
+            border: 1px solid rgba(220, 60, 60, 0.4);
+            color: #f88;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+        .btn-danger:hover {
+            background: rgba(220, 60, 60, 0.35);
+            border-color: rgba(220, 60, 60, 0.7);
+        }
+        .btn-sm {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            border-radius: 1.5rem;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: rgba(18, 24, 48, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 550px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 200;
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: 500;
+            animation: slideUp 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            font-size: 0.9rem;
+        }
+        .toast-success {
+            background: rgba(30, 200, 120, 0.9);
+            color: #fff;
+        }
+        .toast-error {
+            background: rgba(220, 60, 60, 0.9);
+            color: #fff;
+        }
+        .toast-info {
+            background: rgba(92, 180, 230, 0.9);
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .modal-content {
+                padding: 1.5rem;
+                width: 95%;
+                border-radius: 1.25rem;
+            }
+            .toast {
+                bottom: 1rem;
+                right: 1rem;
+                left: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef, useMemo, Fragment } = React;
+
+        // ==================== CONSTANTS ====================
+        const APP_PASSWORD = 'Amor2026';
+        const DEFAULT_START_DATE = '2024-01-15';
+        const STORAGE_KEY = 'nuestro_universo_data';
+
+        // ==================== HELPER FUNCTIONS ====================
+        const getInitialData = () => {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+            }
+            return {
+                startDate: DEFAULT_START_DATE,
+                coupleName1: 'Ana',
+                coupleName2: 'Carlos',
+                mainQuote: 'Cada día a tu lado es una nueva estrella en nuestro universo.',
+                memories: [
+                    { id: 1, title: 'Primer Mensaje', date: '2024-01-10', description: 'Aquel mensaje que lo cambió todo. Recuerdo que era tarde y no podía dejar de sonreír.', emoji: '💬',
+                        photos: [] },
+                    { id: 2, title: 'Primer Abrazo', date: '2024-01-20', description: 'Fue en el parque, bajo las estrellas. El mundo se detuvo por un instante.', emoji: '🤗',
+                        photos: [] },
+                    { id: 3, title: 'Primer Beso', date: '2024-02-14', description: 'San Valentín, el día perfecto. Las mariposas no se fueron nunca más.',
+                        emoji: '💋', photos: [] },
+                    { id: 4, title: 'Primer "Te Amo"', date: '2024-03-01', description: 'Lo dijiste susurrando, y el universo entero conspiró a nuestro favor.',
+                        emoji: '❤️', photos: [] },
+                    { id: 5, title: 'Primer Regalo', date: '2024-04-05', description: 'Un collar con una estrella. Dijiste que era para recordarme que siempre brillo.',
+                        emoji: '🎁', photos: [] },
+                    { id: 6, title: 'Primer Aniversario', date: '2025-01-15', description: 'Un año de magia. Celebramos con una cena bajo las estrellas.',
+                    emoji: '🎉', photos: [] },
+                ],
+                photos: [],
+                letters: [
+                    { id: 1, category: 'Cuando me extrañes', title: 'Para cuando me extrañes', content: 'Cierra los ojos y recuerda mi voz...',
+                        createdAt: '2024-06-01' },
+                    { id: 2, category: 'Cuando estés triste', title: 'Un abrazo en palabras',
+                        content: 'No estás solo/a. Estoy contigo aunque no me veas...', createdAt: '2024-07-15' },
+                    { id: 3, category: 'Cuando estés feliz', title: 'Celebra conmigo',
+                        content: 'Tu sonrisa ilumina todo. Hoy el universo celebra contigo...', createdAt: '2024-08-20' },
+                ],
+                songs: [
+                    { id: 1, name: 'Perfect', artist: 'Ed Sheeran', reason: 'Nuestra canción desde el primer baile.',
+                        spotify: 'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',
+                        youtube: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g' },
+                    { id: 2, name: 'All of Me', artist: 'John Legend', reason: 'Porque te amo con cada parte de mí.',
+                        spotify: 'https://open.spotify.com/track/3Uwt0FkA3xN2K1u0pOmn8W',
+                        youtube: 'https://www.youtube.com/watch?v=450p7goxZqg' },
+                ],
+                dreams: [
+                    { id: 1, text: 'Viajar a París juntos', completed: false },
+                    { id: 2, text: 'Ver un amanecer en la playa', completed: true },
+                    { id: 3, text: 'Graduarnos juntos', completed: false },
+                    { id: 4, text: 'Construir nuestra casa', completed: false },
+                ],
+                timeCapsules: [
+                    { id: 1, title: 'Carta para 2027', message: 'Esto es un secreto que solo podrás leer en el futuro...',
+                        revealDate: '2027-01-01', revealed: false },
+                    { id: 2, title: 'Recuerdo de graduación', message: 'Para el día que ambos nos graduemos...',
+                        revealDate: '2026-12-15', revealed: false },
+                ],
+                dailyMessages: [
+                    'Eres la razón por la que creo en la magia.',
+                    'Cada día a tu lado es un regalo del universo.',
+                    'Tu sonrisa ilumina incluso los días más oscuros.',
+                    'Juntos somos invencibles.',
+                    'El amor que compartimos es de otro mundo.',
+                    'Gracias por ser mi hogar.',
+                ],
+                specialDates: [
+                    { id: 1, name: 'Aniversario', date: '2025-01-15', emoji: '💍', recurring: true },
+                    { id: 2, name: 'Cumpleaños de Ana', date: '2024-05-20', emoji: '🎂', recurring: true },
+                    { id: 3, name: 'Cumpleaños de Carlos', date: '2024-09-10', emoji: '🎈', recurring: true },
+                ],
+                notifications: [],
+                anniversaryMoments: [],
+            };
+        };
+
+        const saveData = (data) => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        };
+
+        const formatDate = (dateStr) => {
+            const d = new Date(dateStr + 'T00:00:00');
+            const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre',
+                'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            return `${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+        };
+
+        const getDaysBetween = (start, end) => {
+            const s = new Date(start + 'T00:00:00');
+            const e = end ? new Date(end + 'T00:00:00') : new Date();
+            return Math.floor((e - s) / (1000 * 60 * 60 * 24));
+        };
+
+        const getNextAnniversary = (startDate) => {
+            const start = new Date(startDate + 'T00:00:00');
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            let anniversary = new Date(currentYear, start.getMonth(), start.getDate());
+            if (anniversary < now) {
+                anniversary = new Date(currentYear + 1, start.getMonth(), start.getDate());
+            }
+            return anniversary;
+        };
+
+        const getCountdown = (targetDate) => {
+            const now = new Date();
+            const target = new Date(targetDate + 'T00:00:00');
+            const diff = target - now;
+            if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, passed: true };
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            return { days, hours, minutes, seconds, passed: false };
+        };
+
+        let nextId = 100;
+        const generateId = () => nextId++;
+
+        // ==================== STARS BACKGROUND COMPONENT ====================
+        const StarsBackground = () => {
+            const stars = useMemo(() => {
+                return Array.from({ length: 120 }, (_, i) => ({
+                    id: i,
+                    left: Math.random() * 100 + '%',
+                    top: Math.random() * 100 + '%',
+                    size: Math.random() * 2.5 + 0.8,
+                    duration: Math.random() * 4 + 2,
+                    delay: Math.random() * 4,
+                }));
+            }, []);
+            return (
+                <div className="star-bg">
+                    {stars.map(s => (
+                        <div key={s.id} className="star" style={{
+                            left: s.left,
+                            top: s.top,
+                            width: s.size + 'px',
+                            height: s.size + 'px',
+                            '--duration': s.duration + 's',
+                            '--delay': s.delay + 's',
+                        }} />
+                    ))}
+                </div>
+            );
+        };
+
+        // ==================== TOAST COMPONENT ====================
+        const ToastContext = React.createContext(null);
+        const ToastProvider = ({ children }) => {
+            const [toasts, setToasts] = useState([]);
+            const addToast = useCallback((message, type = 'info') => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+            }, []);
+            return (
+                <ToastContext.Provider value={addToast}>
+                    {children}
+                    <div style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 200, display: 'flex',
+                            flexDirection: 'column', gap: '0.5rem' }}>
+                        {toasts.map(t => (
+                            <div key={t.id} className={`toast toast-${t.type}`}>{t.message}</div>
+                        ))}
+                    </div>
+                </ToastContext.Provider>
+            );
+        };
+        const useToast = () => React.useContext(ToastContext);
+
+        // ==================== LOGIN SCREEN ====================
+        const LoginScreen = ({ onLogin }) => {
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const addToast = useToast();
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setTimeout(() => {
+                    if (password === APP_PASSWORD) {
+                        addToast('✨ Bienvenidos a Nuestro Universo', 'success');
+                        onLogin(true);
+                    } else {
+                        setError('Contraseña incorrecta. Inténtalo de nuevo.');
+                        setLoading(false);
+                        addToast('❌ Contraseña incorrecta', 'error');
+                    }
+                }, 800);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center relative z-10 px-4">
+                    <StarsBackground />
+                    <div className="glass-card p-8 md:p-12 max-w-md w-full text-center animate-slideUp"
+                        style={{ animationDelay: '0.2s' }}>
+                        <div className="text-6xl mb-4">🌌</div>
+                        <h1 className="font-display text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
+                            Nuestro Universo
+                        </h1>
+                        <p className="text-gray-400 mb-8 text-sm">Un espacio solo para nosotros dos</p>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="password"
+                                placeholder="Contraseña secreta"
+                                value={password}
+                                onChange={(e) => { setPassword(e.target.value);
+                                    setError(''); }}
+                                className="mb-4 text-center text-lg tracking-widest"
+                                autoFocus
+                            />
+                            {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+                            <button type="submit" className="btn-primary w-full" disabled={loading}>
+                                {loading ? '✨ Abriendo...' : '💫 Entrar a Nuestro Universo'}
+                            </button>
+                        </form>
+                        <p className="text-gray-600 text-xs mt-6">Solo nosotros conocemos la contraseña</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== MAIN APP ====================
+        const App = () => {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [data, setData] = useState(getInitialData);
+            const [currentSection, setCurrentSection] = useState('home');
+            const [modalContent, setModalContent] = useState(null);
+            const [notificationPermission, setNotificationPermission] = useState(false);
+            const addToast = useToast();
+
+            // Save data on changes
+            useEffect(() => {
+                if (isLoggedIn) saveData(data);
+            }, [data, isLoggedIn]);
+
+            // Request notification permission
+            useEffect(() => {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(p => {
+                        if (p === 'granted') setNotificationPermission(true);
+                    });
+                } else if ('Notification' in window && Notification.permission === 'granted') {
+                    setNotificationPermission(true);
+                }
+            }, []);
+
+            // Check time capsules and special dates
+            useEffect(() => {
+                if (!isLoggedIn) return;
+                const today = new Date().toISOString().split('T')[0];
+
+                // Check time capsules
+                const updatedCapsules = data.timeCapsules.map(c => {
+                    if (!c.revealed && c.revealDate <= today) {
+                        if (notificationPermission) {
+                            new Notification('💫 Cápsula del Tiempo Revelada', {
+                                body: `"${c.title}" ya está disponible para abrir.`,
+                                icon: '💫'
+                            });
+                        }
+                        addToast(`📦 ¡Cápsula del tiempo revelada: "${c.title}"!`, 'info');
+                        return { ...c, revealed: true };
+                    }
+                    return c;
+                });
+                if (updatedCapsules.some((c, i) => c.revealed !== data.timeCapsules[i]?.revealed)) {
+                    setData(prev => ({ ...prev, timeCapsules: updatedCapsules }));
+                }
+
+                // Check special dates (7 days before)
+                data.specialDates.forEach(sd => {
+                    const targetDate = new Date(sd.date + 'T00:00:00');
+                    const daysUntil = Math.floor((targetDate - new Date(today + 'T00:00:00')) / (1000 * 60 * 60 *
+                        24));
+                    if (daysUntil === 7 || daysUntil === 1 || daysUntil === 0) {
+                        const existingNotif = data.notifications.find(n =>
+                            n.dateId === sd.id && n.daysBefore === daysUntil && n.sentDate === today
+                        );
+                        if (!existingNotif) {
+                            const newNotif = {
+                                id: generateId(),
+                                dateId: sd.id,
+                                dateName: sd.name,
+                                daysBefore: daysUntil,
+                                sentDate: today,
+                                message: daysUntil === 0 ?
+                                    `🎉 ¡Hoy es ${sd.name}! ${sd.emoji}` :
+                                    `⏰ Faltan ${daysUntil} días para ${sd.name} ${sd.emoji}`,
+                            };
+                            setData(prev => ({
+                                ...prev,
+                                notifications: [...prev.notifications, newNotif]
+                            }));
+                            if (notificationPermission) {
+                                new Notification('Recordatorio Especial', {
+                                    body: newNotif.message,
+                                    icon: sd.emoji
+                                });
+                            }
+                            addToast(newNotif.message, 'info');
+                        }
+                    }
+                });
+            }, [isLoggedIn, data.timeCapsules, data.specialDates]);
+
+            if (!isLoggedIn) {
+                return (
+                    <ToastProvider>
+                        <LoginScreen onLogin={setIsLoggedIn} />
+                    </ToastProvider>
+                );
+            }
+
+            return (
+                <ToastProvider>
+                    <div className="min-h-screen relative">
+                        <StarsBackground />
+                        <div className="relative z-10">
+                            <Navigation currentSection={currentSection} onNavigate={setCurrentSection} data={data} />
+                            <main className="pt-16 pb-8 px-4 md:px-6 max-w-6xl mx-auto">
+                                {currentSection === 'home' && <HomeSection data={data} setData={setData}
+                                    onNavigate={setCurrentSection} />}
+                                {currentSection === 'memories' && <MemoriesSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'photos' && <PhotosSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'letters' && <LettersSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'songs' && <SongsSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'dreams' && <DreamsSection data={data} setData={setData} />}
+                                {currentSection === 'timecapsule' && <TimeCapsuleSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'dailymessage' && <DailyMessageSection data={data}
+                                    setData={setData} />}
+                                {currentSection === 'settings' && <SettingsSection data={data} setData={setData}
+                                    setModal={setModalContent} />}
+                                {currentSection === 'anniversaries' && <AnniversarySection data={data}
+                                    setData={setData} />}
+                                {currentSection === 'notifications' && <NotificationsSection data={data}
+                                    setData={setData} />}
+                            </main>
+                        </div>
+                        {modalContent && <Modal content={modalContent} onClose={() => setModalContent(null)}
+                            data={data} setData={setData} />}
+                    </div>
+                </ToastProvider>
+            );
+        };
+
+        // ==================== NAVIGATION ====================
+        const Navigation = ({ currentSection, onNavigate, data }) => {
+            const [mobileOpen, setMobileOpen] = useState(false);
+            const daysTogether = getDaysBetween(data.startDate);
+            const sections = [
+                { id: 'home', icon: '🏠', label: 'Inicio' },
+                { id: 'memories', icon: '⭐', label: 'Recuerdos' },
+                { id: 'photos', icon: '📸', label: 'Fotos' },
+                { id: 'letters', icon: '💌', label: 'Cartas' },
+                { id: 'songs', icon: '🎵', label: 'Música' },
+                { id: 'dreams', icon: '🌙', label: 'Sueños' },
+                { id: 'timecapsule', icon: '📦', label: 'Cápsula' },
+                { id: 'dailymessage', icon: '💭', label: 'Mensaje' },
+                { id: 'anniversaries', icon: '🎊', label: 'Momentos' },
+                { id: 'notifications', icon: '🔔', label: 'Avisos' },
+                { id: 'settings', icon: '⚙️', label: 'Fechas' },
+            ];
+            return (
+                <nav className="fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-t-0 border-x-0"
+                    style={{ background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
+                    <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5">
+                        <button onClick={() => onNavigate('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <span className="text-2xl">🌌</span>
+                            <span className="font-display font-semibold text-sm md:text-base hidden sm:inline bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
+                                Nuestro Universo
+                            </span>
+                        </button>
+                        <div className="hidden md:flex items-center gap-1 flex-wrap justify-center">
+                            {sections.map(s => (
+                                <button key={s.id} onClick={() => onNavigate(s.id)}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                                        currentSection === s.id
+                                            ? 'bg-gradient-to-r from-blue-500/40 to-cyan-500/40 text-white border border-cyan-400/40'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}>
+                                    {s.icon} <span className="ml-1">{s.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-400 hidden sm:inline">💕 {daysTogether} días</span>
+                            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-2xl p-1">
+                                {mobileOpen ? '✕' : '☰'}
+                            </button>
+                        </div>
+                    </div>
+                    {mobileOpen && (
+                        <div className="md:hidden px-4 pb-3 flex flex-wrap gap-1.5">
+                            {sections.map(s => (
+                                <button key={s.id} onClick={() => { onNavigate(s.id);
+                                        setMobileOpen(false); }}
+                                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                        currentSection === s.id
+                                            ? 'bg-gradient-to-r from-blue-500/40 to-cyan-500/40 text-white'
+                                            : 'text-gray-400 hover:text-white bg-white/5'
+                                    }`}>
+                                    {s.icon} {s.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        // ==================== HOME SECTION ====================
+        const HomeSection = ({ data, setData, onNavigate }) => {
+            const daysTogether = getDaysBetween(data.startDate);
+            const nextAnniversary = getNextAnniversary(data.startDate);
+            const [countdown, setCountdown] = useState(getCountdown(
+                nextAnniversary.toISOString().split('T')[0]
+            ));
+            const [dailyMsg, setDailyMsg] = useState('');
+
+            useEffect(() => {
+                const msgs = data.dailyMessages;
+                const today = new Date().toDateString();
+                const stored = localStorage.getItem('daily_msg_date');
+                if (stored === today) {
+                    const savedMsg = localStorage.getItem('daily_msg_text');
+                    if (savedMsg) setDailyMsg(savedMsg);
+                } else {
+                    const random = msgs[Math.floor(Math.random() * msgs.length)];
+                    setDailyMsg(random);
+                    localStorage.setItem('daily_msg_date', today);
+                    localStorage.setItem('daily_msg_text', random);
+                }
+            }, [data.dailyMessages]);
+
+            useEffect(() => {
+                const timer = setInterval(() => {
+                    setCountdown(getCountdown(nextAnniversary.toISOString().split('T')[0]));
+                }, 1000);
+                return () => clearInterval(timer);
+            }, [nextAnniversary]);
+
+            const quickLinks = [
+                { id: 'memories', icon: '⭐', label: 'Recuerdos', desc: 'Mapa estelar', color: 'from-yellow-500/30 to-amber-500/20' },
+                { id: 'letters', icon: '💌', label: 'Cartas', desc: 'Biblioteca de amor', color: 'from-pink-500/30 to-rose-500/20' },
+                { id: 'photos', icon: '📸', label: 'Fotos', desc: 'Galería premium', color: 'from-purple-500/30 to-violet-500/20' },
+                { id: 'songs', icon: '🎵', label: 'Música', desc: 'Nuestra playlist', color: 'from-green-500/30 to-emerald-500/20' },
+                { id: 'dreams', icon: '🌙', label: 'Sueños', desc: 'Metas juntos', color: 'from-blue-500/30 to-indigo-500/20' },
+                { id: 'timecapsule', icon: '📦', label: 'Cápsula', desc: 'Mensajes futuros', color: 'from-cyan-500/30 to-teal-500/20' },
+            ];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    {/* Hero */}
+                    <div className="glass-card p-6 md:p-10 text-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-purple-500/10 pointer-events-none"></div>
+                        <div className="relative z-10">
+                            <div className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full bg-gradient-to-br from-blue-400/30 to-cyan-400/30 flex items-center justify-center text-5xl md:text-6xl mb-4 border-2 border-white/20 animate-pulse-glow">
+                                💑
+                            </div>
+                            <h1 className="font-display text-2xl md:text-4xl font-bold mb-2">
+                                <span className="text-blue-300">{data.coupleName1}</span>
+                                <span className="mx-2">💕</span>
+                                <span className="text-cyan-300">{data.coupleName2}</span>
+                            </h1>
+                            <p className="font-script text-lg md:text-2xl text-gray-300 italic mb-6">"{data.mainQuote}"</p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-8">
+                                <div className="text-center">
+                                    <div className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                                        {daysTogether.toLocaleString()}
+                                    </div>
+                                    <div className="text-xs text-gray-400">días juntos</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-lg md:text-xl font-semibold text-cyan-300">
+                                        Próximo aniversario
+                                    </div>
+                                    <div className="flex gap-2 md:gap-3 text-xl md:text-2xl font-mono font-bold text-white mt-1">
+                                        <span className="bg-white/10 px-2 py-1 rounded-lg">{String(countdown.days).padStart(2,'0')}</span>
+                                        <span className="text-gray-400">:</span>
+                                        <span className="bg-white/10 px-2 py-1 rounded-lg">{String(countdown.hours).padStart(2,'0')}</span>
+                                        <span className="text-gray-400">:</span>
+                                        <span className="bg-white/10 px-2 py-1 rounded-lg">{String(countdown.minutes).padStart(2,'0')}</span>
+                                        <span className="text-gray-400">:</span>
+                                        <span className="bg-white/10 px-2 py-1 rounded-lg">{String(countdown.seconds).padStart(2,'0')}</span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">días : hrs : min : seg</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Daily Message */}
+                    <div className="glass-card p-5 text-center">
+                        <p className="text-xs text-gray-400 mb-1">💭 Mensaje del día</p>
+                        <p className="font-script text-xl md:text-2xl italic text-cyan-200">"{dailyMsg}"</p>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        {quickLinks.map(link => (
+                            <button key={link.id} onClick={() => onNavigate(link.id)}
+                                className={`glass-card p-4 text-center cursor-pointer bg-gradient-to-br ${link.color} hover:scale-105 transition-transform`}>
+                                <div className="text-3xl mb-1">{link.icon}</div>
+                                <div className="font-semibold text-sm">{link.label}</div>
+                                <div className="text-xs text-gray-400">{link.desc}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== MEMORIES SECTION ====================
+        const MemoriesSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const [editingMemory, setEditingMemory] = useState(null);
+
+            const handleDelete = (id) => {
+                if (confirm('¿Eliminar este recuerdo?')) {
+                    setData(prev => ({ ...prev, memories: prev.memories.filter(m => m.id !== id) }));
+                    addToast('Recuerdo eliminado', 'info');
+                }
+            };
+
+            const openEdit = (memory = null) => {
+                setEditingMemory(memory || { id: null, title: '', date: '', description: '', emoji: '⭐', photos: [] });
+            };
+
+            const saveMemory = () => {
+                if (!editingMemory.title || !editingMemory.date) {
+                    addToast('Título y fecha son obligatorios', 'error');
+                    return;
+                }
+                if (editingMemory.id) {
+                    setData(prev => ({
+                        ...prev,
+                        memories: prev.memories.map(m => m.id === editingMemory.id ? editingMemory : m)
+                    }));
+                } else {
+                    const newMemory = { ...editingMemory, id: generateId() };
+                    setData(prev => ({ ...prev, memories: [...prev.memories, newMemory] }));
+                }
+                setEditingMemory(null);
+                addToast('✨ Recuerdo guardado', 'success');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-display text-2xl md:text-3xl font-bold">⭐ Mapa Estelar de Recuerdos</h2>
+                        <button onClick={() => openEdit()} className="btn-primary btn-sm">+ Nueva Estrella</button>
+                    </div>
+                    <p className="text-gray-400 text-sm">Cada estrella es un momento especial. Haz clic para ver los detalles.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {data.memories.map((memory, index) => (
+                            <div key={memory.id} className="glass-card p-5 cursor-pointer hover:border-cyan-400/30"
+                                style={{ animationDelay: `${index * 0.08}s`, animation: 'slideUp 0.5s cubic-bezier(0.4,0,0.2,1) forwards' }}
+                                onClick={() => openEdit(memory)}>
+                                <div className="flex items-start justify-between mb-3">
+                                    <span className="text-4xl">{memory.emoji}</span>
+                                    <div className="flex gap-1">
+                                        <button onClick={(e) => { e.stopPropagation();
+                                                handleDelete(memory.id); }} className="text-gray-500 hover:text-red-400 text-sm">🗑️</button>
+                                    </div>
+                                </div>
+                                <h3 className="font-semibold text-lg mb-1">{memory.title}</h3>
+                                <p className="text-xs text-cyan-400 mb-2">{formatDate(memory.date)}</p>
+                                <p className="text-sm text-gray-300 line-clamp-2">{memory.description}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Edit Modal */}
+                    {editingMemory && (
+                        <div className="modal-overlay" onClick={() => setEditingMemory(null)}>
+                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="font-display text-xl font-bold mb-4">
+                                    {editingMemory.id ? '✨ Editar Recuerdo' : '⭐ Nueva Estrella'}
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs text-gray-400 block mb-1">Emoji</label>
+                                        <input value={editingMemory.emoji} onChange={e => setEditingMemory(prev => ({ ...prev,
+                                                emoji: e.target.value }))} maxLength={4} className="text-2xl text-center w-20" />
+                                    </div>
+                                    <input placeholder="Título del recuerdo" value={editingMemory.title} onChange={e =>
+                                            setEditingMemory(prev => ({ ...prev, title: e.target.value }))} />
+                                    <input type="date" value={editingMemory.date} onChange={e => setEditingMemory(prev =>
+                                        ({ ...prev, date: e.target.value }))} />
+                                    <textarea placeholder="Cuenta la historia..." value={editingMemory.description}
+                                        onChange={e => setEditingMemory(prev => ({ ...prev, description: e.target
+                                                .value }))} rows={4} />
+                                    <div className="flex gap-3">
+                                        <button onClick={saveMemory} className="btn-primary flex-1">💾 Guardar</button>
+                                        <button onClick={() => setEditingMemory(null)}
+                                    className="btn-ghost">Cancelar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ==================== PHOTOS SECTION ====================
+        const PhotosSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const [showForm, setShowForm] = useState(false);
+            const [newPhoto, setNewPhoto] = useState({ title: '', date: '', description: '', imageUrl: '' });
+
+            const handleAdd = () => {
+                if (!newPhoto.title || !newPhoto.imageUrl) {
+                    addToast('Título e imagen son obligatorios', 'error');
+                    return;
+                }
+                const photo = { ...newPhoto, id: generateId() };
+                setData(prev => ({ ...prev, photos: [...prev.photos, photo] }));
+                setNewPhoto({ title: '', date: '', description: '', imageUrl: '' });
+                setShowForm(false);
+                addToast('📸 Foto añadida', 'success');
+            };
+
+            const handleDelete = (id) => {
+                setData(prev => ({ ...prev, photos: prev.photos.filter(p => p.id !== id) }));
+                addToast('Foto eliminada', 'info');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-display text-2xl md:text-3xl font-bold">📸 Galería de Fotos</h2>
+                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                            {showForm ? 'Cancelar' : '+ Añadir Foto'}
+                        </button>
+                    </div>
+                    {showForm && (
+                        <div className="glass-card p-5 space-y-3">
+                            <input placeholder="Título de la foto" value={newPhoto.title} onChange={e => setNewPhoto(prev =>
+                                ({ ...prev, title: e.target.value }))} />
+                            <input type="date" value={newPhoto.date} onChange={e => setNewPhoto(prev => ({ ...prev,
+                                    date: e.target.value }))} />
+                            <input placeholder="URL de la imagen (placeholder o real)" value={newPhoto.imageUrl}
+                                onChange={e => setNewPhoto(prev => ({ ...prev, imageUrl: e.target.value }))} />
+                            <textarea placeholder="Descripción o recuerdo..." value={newPhoto.description} onChange={e =>
+                                    setNewPhoto(prev => ({ ...prev, description: e.target.value }))} rows={2} />
+                            <button onClick={handleAdd} className="btn-primary">Guardar Foto</button>
+                        </div>
+                    )}
+                    {data.photos.length === 0 && !showForm && (
+                        <div className="text-center py-12 text-gray-500">
+                            <div className="text-5xl mb-4">📷</div>
+                            <p>Aún no hay fotos en la galería.</p>
+                            <p className="text-sm">Añade su primera foto juntos.</p>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {data.photos.map((photo, i) => (
+                            <div key={photo.id} className="glass-card overflow-hidden group cursor-pointer"
+                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                <div className="aspect-square bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center overflow-hidden">
+                                    <img src={photo.imageUrl} alt={photo.title}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        onError={(e) => { e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML =
+                                            '<span class="text-4xl">🖼️</span>'; }} />
+                                </div>
+                                <div className="p-3">
+                                    <h4 className="font-semibold text-sm">{photo.title}</h4>
+                                    {photo.date && <p className="text-xs text-cyan-400">{formatDate(photo.date)}</p>}
+                                    {photo.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{photo
+                                            .description}</p>}
+                                    <button onClick={() => handleDelete(photo.id)}
+                                        className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️ Eliminar</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== LETTERS SECTION ====================
+        const LettersSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const categories = ['Cuando me extrañes', 'Cuando estés triste', 'Cuando estés feliz', 'Cuando tengas miedo',
+                'Cuando necesites una sonrisa', 'General/Dedicatorias'
+            ];
+            const [selectedCat, setSelectedCat] = useState(categories[0]);
+            const [showForm, setShowForm] = useState(false);
+            const [newLetter, setNewLetter] = useState({ title: '', content: '', category: categories[0] });
+            const [openLetterId, setOpenLetterId] = useState(null);
+
+            const filtered = data.letters.filter(l => l.category === selectedCat);
+
+            const handleAdd = () => {
+                if (!newLetter.title || !newLetter.content) {
+                    addToast('Título y contenido son obligatorios', 'error');
+                    return;
+                }
+                const letter = { ...newLetter, id: generateId(), createdAt: new Date().toISOString().split('T')[0] };
+                setData(prev => ({ ...prev, letters: [...prev.letters, letter] }));
+                setNewLetter({ title: '', content: '', category: selectedCat });
+                setShowForm(false);
+                addToast('💌 Carta guardada', 'success');
+            };
+
+            const handleDelete = (id) => {
+                setData(prev => ({ ...prev, letters: prev.letters.filter(l => l.id !== id) }));
+                addToast('Carta eliminada', 'info');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold">💌 Cartas de Amor</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {categories.map(cat => (
+                            <button key={cat} onClick={() => { setSelectedCat(cat);
+                                    setOpenLetterId(null); }}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                    selectedCat === cat ? 'bg-rose-500/40 text-white border border-rose-400/40' : 'bg-white/5 text-gray-400 hover:text-white'
+                                }`}>
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                        {showForm ? 'Cancelar' : '+ Nueva Carta'}
+                    </button>
+                    {showForm && (
+                        <div className="glass-card p-5 space-y-3">
+                            <select value={newLetter.category} onChange={e => setNewLetter(prev => ({ ...prev,
+                                    category: e.target.value }))}>
+                                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                            <input placeholder="Título de la carta" value={newLetter.title} onChange={e => setNewLetter(
+                                prev => ({ ...prev, title: e.target.value }))} />
+                            <textarea placeholder="Escribe desde el corazón..." value={newLetter.content} onChange={e =>
+                                    setNewLetter(prev => ({ ...prev, content: e.target.value }))} rows={5} />
+                            <button onClick={handleAdd} className="btn-primary">💌 Guardar Carta</button>
+                        </div>
+                    )}
+                    <div className="space-y-3">
+                        {filtered.map((letter, i) => (
+                            <div key={letter.id} className="glass-card overflow-hidden"
+                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                <div onClick={() => setOpenLetterId(openLetterId === letter.id ? null : letter.id)}
+                                    className="p-5 cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-3xl">✉️</span>
+                                        <div>
+                                            <h4 className="font-semibold">{letter.title}</h4>
+                                            <p className="text-xs text-gray-400">{formatDate(letter.createdAt)}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-gray-400 transition-transform"
+                                        style={{ transform: openLetterId === letter.id ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                                </div>
+                                {openLetterId === letter.id && (
+                                    <div className="px-5 pb-5 pt-0 border-t border-white/5"
+                                        style={{ animation: 'slideUp 0.3s ease' }}>
+                                        <div className="bg-white/5 rounded-xl p-4 mt-3 font-script text-lg leading-relaxed italic text-gray-200">
+                                            {letter.content}
+                                        </div>
+                                        <button onClick={() => handleDelete(letter.id)}
+                                            className="btn-danger btn-sm mt-3">🗑️ Eliminar</button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        {filtered.length === 0 && (
+                            <p className="text-center text-gray-500 py-8">No hay cartas en esta categoría aún.</p>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== SONGS SECTION ====================
+        const SongsSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const [showForm, setShowForm] = useState(false);
+            const [newSong, setNewSong] = useState({ name: '', artist: '', reason: '', spotify: '', youtube: '' });
+
+            const handleAdd = () => {
+                if (!newSong.name || !newSong.artist) {
+                    addToast('Nombre y artista son obligatorios', 'error');
+                    return;
+                }
+                const song = { ...newSong, id: generateId() };
+                setData(prev => ({ ...prev, songs: [...prev.songs, song] }));
+                setNewSong({ name: '', artist: '', reason: '', spotify: '', youtube: '' });
+                setShowForm(false);
+                addToast('🎵 Canción añadida', 'success');
+            };
+
+            const handleDelete = (id) => {
+                setData(prev => ({ ...prev, songs: prev.songs.filter(s => s.id !== id) }));
+                addToast('Canción eliminada', 'info');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-display text-2xl md:text-3xl font-bold">🎵 Música Especial</h2>
+                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                            {showForm ? 'Cancelar' : '+ Añadir Canción'}
+                        </button>
+                    </div>
+                    {showForm && (
+                        <div className="glass-card p-5 space-y-3">
+                            <input placeholder="Nombre de la canción" value={newSong.name} onChange={e => setNewSong(prev =>
+                                ({ ...prev, name: e.target.value }))} />
+                            <input placeholder="Artista" value={newSong.artist} onChange={e => setNewSong(prev => ({ ...prev,
+                                    artist: e.target.value }))} />
+                            <textarea placeholder="¿Por qué es especial?" value={newSong.reason} onChange={e => setNewSong(
+                                prev => ({ ...prev, reason: e.target.value }))} rows={2} />
+                            <input placeholder="Enlace Spotify (opcional)" value={newSong.spotify} onChange={e => setNewSong(
+                                prev => ({ ...prev, spotify: e.target.value }))} />
+                            <input placeholder="Enlace YouTube (opcional)" value={newSong.youtube} onChange={e => setNewSong(
+                                prev => ({ ...prev, youtube: e.target.value }))} />
+                            <button onClick={handleAdd} className="btn-primary">Guardar Canción</button>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {data.songs.map((song, i) => (
+                            <div key={song.id} className="glass-card p-5 flex items-start gap-4"
+                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                <div className="text-4xl flex-shrink-0">🎶</div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-semibold">{song.name}</h4>
+                                    <p className="text-sm text-cyan-400">{song.artist}</p>
+                                    {song.reason && <p className="text-xs text-gray-400 mt-1 italic">"{song.reason}"</p>}
+                                    <div className="flex gap-2 mt-2 flex-wrap">
+                                        {song.spotify && <a href={song.spotify} target="_blank" rel="noopener"
+                                            className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">🎧 Spotify</a>}
+                                        {song.youtube && <a href={song.youtube} target="_blank" rel="noopener"
+                                            className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">▶️ YouTube</a>}
+                                    </div>
+                                    <button onClick={() => handleDelete(song.id)}
+                                        className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== DREAMS SECTION ====================
+        const DreamsSection = ({ data, setData }) => {
+            const addToast = useToast();
+            const [newDream, setNewDream] = useState('');
+
+            const handleAdd = () => {
+                if (!newDream.trim()) return;
+                const dream = { id: generateId(), text: newDream.trim(), completed: false };
+                setData(prev => ({ ...prev, dreams: [...prev.dreams, dream] }));
+                setNewDream('');
+                addToast('🌙 Sueño añadido', 'success');
+            };
+
+            const toggleDream = (id) => {
+                setData(prev => ({
+                    ...prev,
+                    dreams: prev.dreams.map(d => d.id === id ? { ...d, completed: !d.completed } : d)
+                }));
+            };
+
+            const handleDelete = (id) => {
+                setData(prev => ({ ...prev, dreams: prev.dreams.filter(d => d.id !== id) }));
+                addToast('Sueño eliminado', 'info');
+            };
+
+            const pending = data.dreams.filter(d => !d.completed);
+            const completed = data.dreams.filter(d => d.completed);
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold">🌙 Sueños Pendientes</h2>
+                    <div className="flex gap-2">
+                        <input placeholder="Nuevo sueño compartido..." value={newDream} onChange={e => setNewDream(e.target
+                                .value)}
+                            onKeyDown={e => e.key === 'Enter' && handleAdd()} className="flex-1" />
+                        <button onClick={handleAdd} className="btn-primary">Añadir</button>
+                    </div>
+                    <div className="space-y-3">
+                        {pending.map((dream, i) => (
+                            <div key={dream.id} className="glass-card p-4 flex items-center gap-3"
+                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                <button onClick={() => toggleDream(dream.id)}
+                                    className="w-6 h-6 rounded-full border-2 border-gray-400 hover:border-cyan-400 flex-shrink-0 transition-colors"></button>
+                                <span className="flex-1">{dream.text}</span>
+                                <button onClick={() => handleDelete(dream.id)}
+                            className="text-gray-500 hover:text-red-400">🗑️</button>
+                            </div>
+                        ))}
+                    </div>
+                    {completed.length > 0 && (
+                        <div>
+                            <h3 className="font-semibold text-green-400 mb-3">✅ Cumplidos ({completed.length})</h3>
+                            <div className="space-y-2">
+                                {completed.map(dream => (
+                                    <div key={dream.id} className="glass-card p-4 flex items-center gap-3 opacity-70">
+                                        <span className="text-green-400">✅</span>
+                                        <span className="flex-1 line-through text-gray-500">{dream.text}</span>
+                                        <button onClick={() => toggleDream(dream.id)}
+                                    className="text-xs text-gray-500 hover:text-yellow-400">↩️</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ==================== TIME CAPSULE SECTION ====================
+        const TimeCapsuleSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const [showForm, setShowForm] = useState(false);
+            const [newCapsule, setNewCapsule] = useState({ title: '', message: '', revealDate: '' });
+
+            const handleAdd = () => {
+                if (!newCapsule.title || !newCapsule.message || !newCapsule.revealDate) {
+                    addToast('Todos los campos son obligatorios', 'error');
+                    return;
+                }
+                const capsule = { ...newCapsule, id: generateId(), revealed: false };
+                setData(prev => ({ ...prev, timeCapsules: [...prev.timeCapsules, capsule] }));
+                setNewCapsule({ title: '', message: '', revealDate: '' });
+                setShowForm(false);
+                addToast('📦 Cápsula del tiempo creada', 'success');
+            };
+
+            const handleDelete = (id) => {
+                setData(prev => ({ ...prev, timeCapsules: prev.timeCapsules.filter(c => c.id !== id) }));
+                addToast('Cápsula eliminada', 'info');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-display text-2xl md:text-3xl font-bold">📦 Cápsula del Tiempo</h2>
+                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                            {showForm ? 'Cancelar' : '+ Nueva Cápsula'}
+                        </button>
+                    </div>
+                    <p className="text-gray-400 text-sm">Mensajes que solo se revelarán cuando llegue la fecha programada.</p>
+                    {showForm && (
+                        <div className="glass-card p-5 space-y-3">
+                            <input placeholder="Título de la cápsula" value={newCapsule.title} onChange={e => setNewCapsule(
+                                prev => ({ ...prev, title: e.target.value }))} />
+                            <textarea placeholder="Mensaje secreto..." value={newCapsule.message} onChange={e => setNewCapsule(
+                                prev => ({ ...prev, message: e.target.value }))} rows={4} />
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Fecha de revelación</label>
+                                <input type="date" value={newCapsule.revealDate} onChange={e => setNewCapsule(prev => ({ ...prev,
+                                        revealDate: e.target.value }))} />
+                            </div>
+                            <button onClick={handleAdd} className="btn-primary">🔒 Sellar Cápsula</button>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {data.timeCapsules.map((capsule, i) => (
+                            <div key={capsule.id} className={`glass-card p-5 ${capsule.revealed ? 'border-green-400/40 bg-green-500/5' : 'border-amber-400/20'}`}
+                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                <div className="text-4xl mb-3">{capsule.revealed ? '📭' : '🔒'}</div>
+                                <h4 className="font-semibold">{capsule.title}</h4>
+                                <p className="text-xs text-amber-400 mb-2">📅 {formatDate(capsule.revealDate)}</p>
+                                {capsule.revealed ? (
+                                    <div className="bg-white/5 rounded-xl p-4 mt-2 font-script italic text-lg">
+                                        {capsule.message}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500 italic">🔐 Sellado hasta la fecha indicada...</p>
+                                )}
+                                <button onClick={() => handleDelete(capsule.id)}
+                                    className="btn-danger btn-sm mt-3">🗑️</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== DAILY MESSAGE SECTION ====================
+        const DailyMessageSection = ({ data, setData }) => {
+            const addToast = useToast();
+            const [newMsg, setNewMsg] = useState('');
+
+            const handleAdd = () => {
+                if (!newMsg.trim()) return;
+                setData(prev => ({ ...prev, dailyMessages: [...prev.dailyMessages, newMsg.trim()] }));
+                setNewMsg('');
+                addToast('💭 Mensaje añadido', 'success');
+            };
+
+            const handleDelete = (index) => {
+                setData(prev => ({
+                    ...prev,
+                    dailyMessages: prev.dailyMessages.filter((_, i) => i !== index)
+                }));
+                addToast('Mensaje eliminado', 'info');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold">💭 Mensajes del Día</h2>
+                    <p className="text-gray-400 text-sm">Frases que aparecerán aleatoriamente al visitar la página.</p>
+                    <div className="flex gap-2">
+                        <input placeholder="Nuevo mensaje..." value={newMsg} onChange={e => setNewMsg(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleAdd()} className="flex-1" />
+                        <button onClick={handleAdd} className="btn-primary">Añadir</button>
+                    </div>
+                    <div className="space-y-2">
+                        {data.dailyMessages.map((msg, i) => (
+                            <div key={i} className="glass-card p-4 flex items-center justify-between">
+                                <p className="font-script italic text-gray-200">"{msg}"</p>
+                                <button onClick={() => handleDelete(i)}
+                            className="text-gray-500 hover:text-red-400 ml-3 flex-shrink-0">🗑️</button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== SETTINGS SECTION ====================
+        const SettingsSection = ({ data, setData, setModal }) => {
+            const addToast = useToast();
+            const [showForm, setShowForm] = useState(false);
+            const [editingDate, setEditingDate] = useState(null);
+
+            const handleSaveDate = () => {
+                if (!editingDate.name || !editingDate.date) {
+                    addToast('Nombre y fecha son obligatorios', 'error');
+                    return;
+                }
+                if (editingDate.id) {
+                    setData(prev => ({
+                        ...prev,
+                        specialDates: prev.specialDates.map(d => d.id === editingDate.id ? editingDate : d)
+                    }));
+                } else {
+                    setData(prev => ({
+                        ...prev,
+                        specialDates: [...prev.specialDates, { ...editingDate, id: generateId(),
+                            recurring: true }]
+                    }));
+                }
+                setEditingDate(null);
+                addToast('📅 Fecha guardada', 'success');
+            };
+
+            const handleDeleteDate = (id) => {
+                setData(prev => ({ ...prev, specialDates: prev.specialDates.filter(d => d.id !== id) }));
+                addToast('Fecha eliminada', 'info');
+            };
+
+            const handleUpdateStartDate = (newDate) => {
+                setData(prev => ({ ...prev, startDate: newDate }));
+                addToast('✨ Fecha de inicio actualizada', 'success');
+            };
+
+            const handleUpdateNames = (field, value) => {
+                setData(prev => ({ ...prev, [field]: value }));
+                addToast('✨ Nombre actualizado', 'success');
+            };
+
+            const handleUpdateQuote = (quote) => {
+                setData(prev => ({ ...prev, mainQuote: quote }));
+                addToast('✨ Frase actualizada', 'success');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold">⚙️ Configuración</h2>
+
+                    {/* Couple Info */}
+                    <div className="glass-card p-5 space-y-4">
+                        <h3 className="font-semibold text-lg">👫 Información de la Pareja</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Nombre 1</label>
+                                <input value={data.coupleName1} onChange={e => handleUpdateNames('coupleName1', e.target
+                                        .value)} />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Nombre 2</label>
+                                <input value={data.coupleName2} onChange={e => handleUpdateNames('coupleName2', e.target
+                                        .value)} />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">Fecha de inicio de la relación</label>
+                            <input type="date" value={data.startDate} onChange={e => handleUpdateStartDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">Frase romántica principal</label>
+                            <input value={data.mainQuote} onChange={e => handleUpdateQuote(e.target.value)} />
+                        </div>
+                    </div>
+
+                    {/* Special Dates */}
+                    <div className="glass-card p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-lg">📅 Fechas Especiales</h3>
+                            <button onClick={() => setEditingDate({ id: null, name: '', date: '', emoji: '📅',
+                                    recurring: true })} className="btn-primary btn-sm">+ Añadir</button>
+                        </div>
+                        <div className="space-y-2">
+                            {data.specialDates.map(sd => (
+                                <div key={sd.id} className="flex items-center justify-between bg-white/5 rounded-xl p-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{sd.emoji}</span>
+                                        <div>
+                                            <span className="font-medium">{sd.name}</span>
+                                            <span className="text-xs text-gray-400 ml-2">{formatDate(sd.date)}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button onClick={() => setEditingDate(sd)}
+                                    className="text-xs text-gray-400 hover:text-white">✏️</button>
+                                        <button onClick={() => handleDeleteDate(sd.id)}
+                                    className="text-xs text-gray-400 hover:text-red-400">🗑️</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Edit Date Modal */}
+                    {editingDate && (
+                        <div className="modal-overlay" onClick={() => setEditingDate(null)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                <h3 className="font-display text-xl font-bold mb-4">
+                                    {editingDate.id ? '✏️ Editar Fecha' : '📅 Nueva Fecha Especial'}
+                                </h3>
+                                <div className="space-y-3">
+                                    <input placeholder="Emoji" value={editingDate.emoji} onChange={e => setEditingDate(prev =>
+                                        ({ ...prev, emoji: e.target.value }))} maxLength={4} className="text-2xl w-20 text-center" />
+                                    <input placeholder="Nombre del evento" value={editingDate.name} onChange={e =>
+                                            setEditingDate(prev => ({ ...prev, name: e.target.value }))} />
+                                    <input type="date" value={editingDate.date} onChange={e => setEditingDate(prev => ({ ...prev,
+                                            date: e.target.value }))} />
+                                    <div className="flex gap-3">
+                                        <button onClick={handleSaveDate}
+                                    className="btn-primary flex-1">💾 Guardar</button>
+                                        <button onClick={() => setEditingDate(null)}
+                                    className="btn-ghost">Cancelar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ==================== ANNIVERSARY SECTION ====================
+        const AnniversarySection = ({ data, setData }) => {
+            const addToast = useToast();
+            const startDate = new Date(data.startDate + 'T00:00:00');
+            const now = new Date();
+            const anniversaries = [];
+            for (let year = startDate.getFullYear(); year <= now.getFullYear(); year++) {
+                const annDate = new Date(year, startDate.getMonth(), startDate.getDate());
+                if (annDate <= now && annDate >= startDate) {
+                    anniversaries.push({
+                        year,
+                        date: annDate,
+                        number: year - startDate.getFullYear(),
+                        dateStr: annDate.toISOString().split('T')[0],
+                    });
+                }
+            }
+
+            const existingMoments = data.anniversaryMoments || [];
+            const [editingMoment, setEditingMoment] = useState(null);
+
+            const handleSaveMoment = (anniversary) => {
+                const existing = existingMoments.find(m => m.anniversaryNumber === anniversary.number);
+                if (existing) {
+                    setEditingMoment({ ...existing, anniversaryDate: anniversary.dateStr,
+                        anniversaryNumber: anniversary.number });
+                } else {
+                    setEditingMoment({
+                        id: null,
+                        anniversaryNumber: anniversary.number,
+                        anniversaryDate: anniversary.dateStr,
+                        note: '',
+                        highlight: '',
+                    });
+                }
+            };
+
+            const saveMoment = () => {
+                if (editingMoment.id) {
+                    setData(prev => ({
+                        ...prev,
+                        anniversaryMoments: (prev.anniversaryMoments || []).map(m =>
+                            m.id === editingMoment.id ? editingMoment : m
+                        )
+                    }));
+                } else {
+                    setData(prev => ({
+                        ...prev,
+                        anniversaryMoments: [...(prev.anniversaryMoments || []), { ...editingMoment,
+                            id: generateId() }]
+                    }));
+                }
+                setEditingMoment(null);
+                addToast('🎊 Momento guardado', 'success');
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <h2 className="font-display text-2xl md:text-3xl font-bold">🎊 Galería de Momentos Especiales</h2>
+                    <p className="text-gray-400 text-sm">Resumen de todos los aniversarios que han compartido.</p>
+                    {anniversaries.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8">Aún no han celebrado su primer aniversario.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {anniversaries.reverse().map((ann, i) => {
+                                const moment = existingMoments.find(m => m.anniversaryNumber === ann.number);
+                                return (
+                                    <div key={ann.number} className="glass-card p-5"
+                                        style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h3 className="font-display text-xl font-bold">
+                                                    {ann.number === 0 ? '🌟 Inicio de la Relación' : `🎉 ${ann.number}º Aniversario`}
+                                                </h3>
+                                                <p className="text-sm text-cyan-400">{formatDate(ann.dateStr)}</p>
+                                            </div>
+                                            <span className="text-3xl">{ann.number === 0 ? '💫' : '🎊'}</span>
+                                        </div>
+                                        {moment && (
+                                            <div className="mt-3 bg-white/5 rounded-xl p-4">
+                                                {moment.highlight && <p className="font-semibold text-amber-300">✨ {moment
+                                                        .highlight}</p>}
+                                                {moment.note && <p className="text-sm text-gray-300 mt-1">{moment.note}</p>}
+                                            </div>
+                                        )}
+                                        <button onClick={() => handleSaveMoment(ann)}
+                                            className="btn-ghost btn-sm mt-3">
+                                            {moment ? '✏️ Editar momento' : '💝 Añadir recuerdo'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Edit Moment Modal */}
+                    {editingMoment && (
+                        <div className="modal-overlay" onClick={() => setEditingMoment(null)}>
+                            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                <h3 className="font-display text-xl font-bold mb-4">
+                                    💝 {editingMoment.anniversaryNumber === 0 ? 'Inicio de la Relación' :
+                                        `${editingMoment.anniversaryNumber}º Aniversario`}
+                                </h3>
+                                <div className="space-y-3">
+                                    <input placeholder="Destacado (ej: Mejor regalo, cena especial...)"
+                                        value={editingMoment.highlight || ''}
+                                        onChange={e => setEditingMoment(prev => ({ ...prev, highlight: e.target.value }))} />
+                                    <textarea placeholder="Notas y detalles del momento..."
+                                        value={editingMoment.note || ''}
+                                        onChange={e => setEditingMoment(prev => ({ ...prev, note: e.target.value }))}
+                                        rows={3} />
+                                    <div className="flex gap-3">
+                                        <button onClick={saveMoment}
+                                    className="btn-primary flex-1">💾 Guardar</button>
+                                        <button onClick={() => setEditingMoment(null)}
+                                    className="btn-ghost">Cancelar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ==================== NOTIFICATIONS SECTION ====================
+        const NotificationsSection = ({ data, setData }) => {
+            const addToast = useToast();
+            const handleClear = () => {
+                setData(prev => ({ ...prev, notifications: [] }));
+                addToast('Notificaciones limpiadas', 'info');
+            };
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-display text-2xl md:text-3xl font-bold">🔔 Notificaciones</h2>
+                        {data.notifications.length > 0 && (
+                            <button onClick={handleClear} className="btn-ghost btn-sm">Limpiar todo</button>
+                        )}
+                    </div>
+                    {data.notifications.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500">
+                            <div className="text-5xl mb-4">🔔</div>
+                            <p>No hay notificaciones.</p>
+                            <p className="text-sm">Aparecerán automáticamente cerca de fechas especiales.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {[...data.notifications].reverse().map(notif => (
+                                <div key={notif.id} className="glass-card p-4 flex items-start gap-3">
+                                    <span className="text-2xl">{notif.daysBefore === 0 ? '🎉' : '⏰'}</span>
+                                    <div>
+                                        <p className="font-medium">{notif.message}</p>
+                                        <p className="text-xs text-gray-500">{notif.sentDate}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ==================== MODAL COMPONENT ====================
+        const Modal = ({ content, onClose, data, setData }) => {
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        {content}
+                        <button onClick={onClose} className="btn-ghost btn-sm mt-4 w-full">Cerrar</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==================== RENDER ====================
+        ReactDOM.render(
+            <ToastProvider>
+                <App />
+            </ToastProvider>,
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
