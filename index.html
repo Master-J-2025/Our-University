@@ -946,19 +946,32 @@
         const PhotosSection = ({ data, setData, setModal }) => {
             const addToast = useToast();
             const [showForm, setShowForm] = useState(false);
-            const [newPhoto, setNewPhoto] = useState({ title: '', date: '', description: '', imageUrl: '' });
+const [newPhoto, setNewPhoto] = useState({ 
+    title: '', 
+    date: '', 
+    description: '', 
+    imageUrl: '',
+    imageFile: null
+});
+const photoRef = useRef(null);
 
-            const handleAdd = () => {
-                if (!newPhoto.title || !newPhoto.imageUrl) {
-                    addToast('Título e imagen son obligatorios', 'error');
-                    return;
-                }
-                const photo = { ...newPhoto, id: generateId() };
-                setData(prev => ({ ...prev, photos: [...prev.photos, photo] }));
-                setNewPhoto({ title: '', date: '', description: '', imageUrl: '' });
-                setShowForm(false);
-                addToast('📸 Foto añadida', 'success');
-            };
+const handleAdd = () => {
+    if (!newPhoto.title && !newPhoto.imageUrl && !newPhoto.imageFile) {
+        addToast('Título e imagen son obligatorios', 'error');
+        return;
+    }
+    
+    let imageUrl = newPhoto.imageUrl;
+    if (newPhoto.imageFile) {
+        imageUrl = URL.createObjectURL(newPhoto.imageFile); // ← CONVIERTE ARCHIVO A URL
+    }
+    
+    const photo = { ...newPhoto, id: generateId(), imageUrl };
+    setData(prev => ({ ...prev, photos: [...prev.photos, photo] }));
+    setNewPhoto({ title: '', date: '', description: '', imageUrl: '', imageFile: null });
+    setShowForm(false);
+    addToast('📸 Foto añadida', 'success');
+};
 
             const handleDelete = (id) => {
                 setData(prev => ({ ...prev, photos: prev.photos.filter(p => p.id !== id) }));
@@ -973,6 +986,33 @@
                             {showForm ? 'Cancelar' : '+ Añadir Foto'}
                         </button>
                     </div>
+                    {showForm && (
+    <div className="glass-card p-5 space-y-3">
+        <input placeholder="Título de la foto" value={newPhoto.title} onChange={e => setNewPhoto(prev =>
+            ({ ...prev, title: e.target.value }))} />
+        <input type="date" value={newPhoto.date} onChange={e => setNewPhoto(prev =>
+            ({ ...prev, date: e.target.value }))} />
+        <textarea placeholder="Descripción (opcional)" value={newPhoto.description} onChange={e => setNewPhoto(prev =>
+            ({ ...prev, description: e.target.value }))} rows={2} />
+        
+        {/* NUEVO - INPUT PARA SUBIR ARCHIVO */}
+        <div className="space-y-2">
+            <label className="text-sm text-cyan-300">📁 Subir foto:</label>
+            <input 
+                type="file" 
+                accept="image/*"
+                onChange={e => setNewPhoto(prev => ({ ...prev, imageFile: e.target.files[0] }))}
+                className="w-full text-xs"
+            />
+            {newPhoto.imageFile && <p className="text-xs text-green-400">✓ {newPhoto.imageFile.name}</p>}
+        </div>
+        
+        <input placeholder="O pegar URL de imagen (opcional)" value={newPhoto.imageUrl} onChange={e => setNewPhoto(prev =>
+            ({ ...prev, imageUrl: e.target.value }))} />
+        
+        <button onClick={handleAdd} className="btn-primary">Guardar Foto</button>
+    </div>
+)}
                     {data.photos.length === 0 && !showForm && (
                         <div className="text-center py-12 text-gray-500">
                             <div className="text-5xl mb-4">📷</div>
@@ -980,28 +1020,27 @@
                             <p className="text-sm">Añade su primera foto juntos.</p>
                         </div>
                     )}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {data.photos.map((photo, i) => (
-                            <div key={photo.id} className="glass-card overflow-hidden group cursor-pointer"
-                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
-                                <div className="aspect-square bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center overflow-hidden">
-                                    <img src={photo.imageUrl} alt={photo.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        onError={(e) => { e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML =
-                                            '<span class="text-4xl">🖼️</span>'; }} />
-                                </div>
-                                <div className="p-3">
-                                    <h4 className="font-semibold text-sm">{photo.title}</h4>
-                                    {photo.date && <p className="text-xs text-cyan-400">{formatDate(photo.date)}</p>}
-                                    {photo.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{photo
-                                            .description}</p>}
-                                    <button onClick={() => handleDelete(photo.id)}
-                                        className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️ Eliminar</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+              <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-3">
+    {data.photos.map((photo, i) => (
+        <div key={photo.id} className="glass-card overflow-hidden group cursor-pointer break-inside-avoid mb-3"
+            style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+            <div className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center overflow-hidden">
+                <img src={photo.imageUrl} alt={photo.title}
+                    className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => { e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML =
+                        '<span class="text-4xl p-4">🖼️</span>'; }} />
+            </div>
+            <div className="p-3">
+                <h4 className="font-semibold text-sm">{photo.title}</h4>
+                {photo.date && <p className="text-xs text-cyan-400">{formatDate(photo.date)}</p>}
+                {photo.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{photo.description}</p>}
+                <button onClick={() => handleDelete(photo.id)}
+                    className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️ Eliminar</button>
+            </div>
+        </div>
+    ))}
+</div>
                 </div>
             );
         };
