@@ -1119,19 +1119,39 @@
         const SongsSection = ({ data, setData, setModal }) => {
             const addToast = useToast();
             const [showForm, setShowForm] = useState(false);
-            const [newSong, setNewSong] = useState({ name: '', artist: '', reason: '', spotify: '', youtube: '' });
+            const [newSong, setNewSong] = useState({ 
+    name: '', 
+    artist: '', 
+    reason: '', 
+    spotify: '', 
+    youtube: '',
+    audioFile: null
+});
+const [reproduciendoId, setReproduciendoId] = useState(null);
+const audioRef = useRef(null);
 
-            const handleAdd = () => {
-                if (!newSong.name || !newSong.artist) {
-                    addToast('Nombre y artista son obligatorios', 'error');
-                    return;
-                }
-                const song = { ...newSong, id: generateId() };
-                setData(prev => ({ ...prev, songs: [...prev.songs, song] }));
-                setNewSong({ name: '', artist: '', reason: '', spotify: '', youtube: '' });
-                setShowForm(false);
-                addToast('🎵 Canción añadida', 'success');
-            };
+const handleAdd = () => {
+    if (!newSong.name || !newSong.artist) {
+        addToast('Nombre y artista son obligatorios', 'error');
+        return;
+    }
+    
+    let audioUrl = null;
+    if (newSong.audioFile) {
+        audioUrl = URL.createObjectURL(newSong.audioFile); // ← CONVIERTE ARCHIVO A URL
+    }
+    
+    const song = { 
+        ...newSong, 
+        id: generateId(),
+        audioUrl // ← AGREGA URL DEL AUDIO
+    };
+    
+    setData(prev => ({ ...prev, songs: [...prev.songs, song] }));
+    setNewSong({ name: '', artist: '', reason: '', spotify: '', youtube: '', audioFile: null });
+    setShowForm(false);
+    addToast('🎵 Canción añadida', 'success');
+};
 
             const handleDelete = (id) => {
                 setData(prev => ({ ...prev, songs: prev.songs.filter(s => s.id !== id) }));
@@ -1147,41 +1167,70 @@
                         </button>
                     </div>
                     {showForm && (
-                        <div className="glass-card p-5 space-y-3">
-                            <input placeholder="Nombre de la canción" value={newSong.name} onChange={e => setNewSong(prev =>
-                                ({ ...prev, name: e.target.value }))} />
-                            <input placeholder="Artista" value={newSong.artist} onChange={e => setNewSong(prev => ({ ...prev,
-                                    artist: e.target.value }))} />
-                            <textarea placeholder="¿Por qué es especial?" value={newSong.reason} onChange={e => setNewSong(
-                                prev => ({ ...prev, reason: e.target.value }))} rows={2} />
-                            <input placeholder="Enlace Spotify (opcional)" value={newSong.spotify} onChange={e => setNewSong(
-                                prev => ({ ...prev, spotify: e.target.value }))} />
-                            <input placeholder="Enlace YouTube (opcional)" value={newSong.youtube} onChange={e => setNewSong(
-                                prev => ({ ...prev, youtube: e.target.value }))} />
-                            <button onClick={handleAdd} className="btn-primary">Guardar Canción</button>
-                        </div>
+{showForm && (
+    <div className="glass-card p-5 space-y-3">
+        <input placeholder="Nombre de la canción" value={newSong.name} onChange={e => setNewSong(prev =>
+            ({ ...prev, name: e.target.value }))} />
+        <input placeholder="Artista" value={newSong.artist} onChange={e => setNewSong(prev => ({ ...prev,
+                artist: e.target.value }))} />
+        <textarea placeholder="¿Por qué es especial?" value={newSong.reason} onChange={e => setNewSong(
+            prev => ({ ...prev, reason: e.target.value }))} rows={2} />
+        <input placeholder="Enlace Spotify (opcional)" value={newSong.spotify} onChange={e => setNewSong(
+            prev => ({ ...prev, spotify: e.target.value }))} />
+        <input placeholder="Enlace YouTube (opcional)" value={newSong.youtube} onChange={e => setNewSong(
+            prev => ({ ...prev, youtube: e.target.value }))} />
+        
+        <div className="space-y-2">
+            <label className="text-sm text-cyan-300">📁 Subir archivo de audio (MP3, WAV):</label>
+            <input 
+                type="file" 
+                accept="audio/*"
+                onChange={e => setNewSong(prev => ({ ...prev, audioFile: e.target.files[0] }))}
+                className="w-full text-xs"
+            />
+            {newSong.audioFile && <p className="text-xs text-green-400">✓ {newSong.audioFile.name}</p>}
+        </div>
+        
+        <button onClick={handleAdd} className="btn-primary">Guardar Canción</button>
+    </div>
+)}
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {data.songs.map((song, i) => (
-                            <div key={song.id} className="glass-card p-5 flex items-start gap-4"
-                                style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
-                                <div className="text-4xl flex-shrink-0">🎶</div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold">{song.name}</h4>
-                                    <p className="text-sm text-cyan-400">{song.artist}</p>
-                                    {song.reason && <p className="text-xs text-gray-400 mt-1 italic">"{song.reason}"</p>}
-                                    <div className="flex gap-2 mt-2 flex-wrap">
-                                        {song.spotify && <a href={song.spotify} target="_blank" rel="noopener"
-                                            className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">🎧 Spotify</a>}
-                                        {song.youtube && <a href={song.youtube} target="_blank" rel="noopener"
-                                            className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">▶️ YouTube</a>}
-                                    </div>
-                                    <button onClick={() => handleDelete(song.id)}
-                                        className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️</button>
-                                </div>
-                            </div>
-                        ))}
+    {data.songs.map((song, i) => (
+        <div key={song.id} className="glass-card p-5 flex items-start gap-4"
+            style={{ animationDelay: `${i*0.1}s`, animation: 'slideUp 0.5s ease forwards' }}>
+            <div className="text-4xl flex-shrink-0">🎶</div>
+            <div className="flex-1 min-w-0">
+                <h4 className="font-semibold">{song.name}</h4>
+                <p className="text-sm text-cyan-400">{song.artist}</p>
+                {song.reason && <p className="text-xs text-gray-400 mt-1 italic">"{song.reason}"</p>}
+                
+                {/* NUEVO - REPRODUCTOR DE AUDIO */}
+                {song.audioUrl && (
+                    <div className="mt-3 bg-black/30 p-2 rounded">
+                        <audio 
+                            ref={reproduciendoId === song.id ? audioRef : null}
+                            src={song.audioUrl}
+                            controls
+                            className="w-full h-8"
+                            onPlay={() => setReproduciendoId(song.id)}
+                            onPause={() => setReproduciendoId(null)}
+                        />
                     </div>
+                )}
+                
+                <div className="flex gap-2 mt-2 flex-wrap">
+                    {song.spotify && <a href={song.spotify} target="_blank" rel="noopener"
+                        className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">🎧 Spotify</a>}
+                    {song.youtube && <a href={song.youtube} target="_blank" rel="noopener"
+                        className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">▶️ YouTube</a>}
+                </div>
+                <button onClick={() => handleDelete(song.id)}
+                    className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️</button>
+            </div>
+        </div>
+    ))}
+</div>
                 </div>
             );
         };
