@@ -973,19 +973,6 @@
                             {showForm ? 'Cancelar' : '+ Añadir Foto'}
                         </button>
                     </div>
-                    {showForm && (
-                        <div className="glass-card p-5 space-y-3">
-                            <input placeholder="Título de la foto" value={newPhoto.title} onChange={e => setNewPhoto(prev =>
-                                ({ ...prev, title: e.target.value }))} />
-                            <input type="date" value={newPhoto.date} onChange={e => setNewPhoto(prev => ({ ...prev,
-                                    date: e.target.value }))} />
-                            <input placeholder="URL de la imagen (placeholder o real)" value={newPhoto.imageUrl}
-                                onChange={e => setNewPhoto(prev => ({ ...prev, imageUrl: e.target.value }))} />
-                            <textarea placeholder="Descripción o recuerdo..." value={newPhoto.description} onChange={e =>
-                                    setNewPhoto(prev => ({ ...prev, description: e.target.value }))} rows={2} />
-                            <button onClick={handleAdd} className="btn-primary">Guardar Foto</button>
-                        </div>
-                    )}
                     {data.photos.length === 0 && !showForm && (
                         <div className="text-center py-12 text-gray-500">
                             <div className="text-5xl mb-4">📷</div>
