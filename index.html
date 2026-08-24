@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuestro Universo 💫</title>
+    <title>Nuestro Universo</title>
+    <link rel="icon" type="image/png" href="./Logo.png">
     <script src="https://cdn.tailwindcss.com">
     </script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js">
@@ -711,7 +712,7 @@
                     <StarsBackground />
                     <div className="glass-card p-8 md:p-12 max-w-md w-full text-center animate-slideUp"
                         style={{ animationDelay: '0.2s' }}>
-                        <div className="text-6xl mb-4">🌌</div>
+                        <img src="./Logo.png" alt="Nuestro Universo" className="w-24 h-24 mx-auto mb-4 rounded-2xl object-cover" />
                         <h1 className="font-display text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
                             Nuestro Universo
                         </h1>
@@ -913,7 +914,7 @@
                     style={{ background: 'rgba(10,14,26,0.85)', backdropFilter: 'blur(20px)' }}>
                     <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-2.5">
                         <button onClick={() => onNavigate('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <span className="text-2xl">🌌</span>
+                            <img src="./Logo.png" alt="Nuestro Universo" className="w-9 h-9 rounded-lg object-cover" />
                             <span className="font-display font-semibold text-sm md:text-base hidden sm:inline bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
                                 Nuestro Universo
                             </span>
