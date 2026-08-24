@@ -347,36 +347,67 @@
         const syncSectionsToSupabase = async (data) => {
             if (!window.supabaseClient) return;
 
+            const withOptionalUuid = (id, row) => {
+                const uuid = typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+                    ? id
+                    : null;
+                return uuid ? { id: uuid, ...row } : row;
+            };
+
             const tables = [
-                { table: 'memories', rows: data.memories || [] },
-                { table: 'photos', rows: data.photos || [] },
-                { table: 'letters', rows: data.letters || [] },
-                { table: 'songs', rows: data.songs || [] },
-                { table: 'dreams', rows: data.dreams || [] },
+                { table: 'memories', rows: (data.memories || []).map(m => withOptionalUuid(m.id, {
+                    title: m.title,
+                    date: m.date,
+                    description: m.description,
+                    content: m.description || m.title || '',
+                    emoji: m.emoji,
+                    photos: Array.isArray(m.photos) ? m.photos : []
+                })) },
+                { table: 'photos', rows: (data.photos || []).map(p => withOptionalUuid(p.id, {
+                    title: p.title,
+                    date: p.date,
+                    description: p.description,
+                    image_url: p.imageUrl || p.image_url || null
+                })) },
+                { table: 'letters', rows: (data.letters || []).map(l => withOptionalUuid(l.id, {
+                    category: l.category,
+                    title: l.title,
+                    content: l.content,
+                    created_at: l.createdAt || l.created_at || null
+                })) },
+                { table: 'songs', rows: (data.songs || []).map(s => withOptionalUuid(s.id, {
+                    name: s.name,
+                    title: s.name,
+                    artist: s.artist,
+                    reason: s.reason,
+                    spotify: s.spotify,
+                    youtube: s.youtube,
+                    audio_url: s.audioUrl || s.audio_url || null
+                })) },
+                { table: 'dreams', rows: (data.dreams || []).map(d => withOptionalUuid(d.id, {
+                    text: d.text,
+                    completed: !!d.completed
+                })) },
                 { table: 'capsules', rows: (data.timeCapsules || []).map(c => ({
-                    id: c.id,
+                    ...withOptionalUuid(c.id, {}),
                     title: c.title,
                     message: c.message,
+                    content: c.message,
                     reveal_date: c.revealDate,
                     revealed: !!c.revealed
                 })) },
-                { table: 'messages', rows: (data.dailyMessages || []).map((content, index) => ({
-                    id: index + 1,
-                    content
-                })) },
-                { table: 'dates', rows: (data.specialDates || []).map(sd => ({
-                    id: sd.id,
+                { table: 'messages', rows: (data.dailyMessages || []).map(content => ({ content })) },
+                { table: 'dates', rows: (data.specialDates || []).map(sd => withOptionalUuid(sd.id, {
                     name: sd.name,
+                    title: sd.name,
                     date: sd.date,
                     emoji: sd.emoji,
                     recurring: !!sd.recurring
                 })) },
-                { table: 'moments', rows: (data.anniversaryMoments || []).map(m => ({
-                    id: m.id,
+                { table: 'moments', rows: (data.anniversaryMoments || []).map(m => withOptionalUuid(m.id, {
                     title: m.title,
                     description: m.description,
                     image_url: m.imageUrl || null,
-                    anniversary_number: m.anniversaryNumber,
                     anniversary_date: m.anniversaryDate
                 })) }
             ];
@@ -394,7 +425,12 @@
         };
 
         const loadSectionsFromSupabase = async () => {
-            if (!window.supabaseClient) return null;
+            if (!window.supabaseClient) {
+                console.warn('[Supabase] No hay cliente inicializado. Revisa si la página se está sirviendo con HTTP/HTTPS y si supabase.js cargó bien.');
+                return null;
+            }
+
+            console.log('[Supabase] Cargando secciones desde la base...');
 
             const tables = [
                 'memories',
@@ -438,14 +474,14 @@
             if (timeCapsules.length) result.timeCapsules = timeCapsules.map(c => ({
                 id: c.id,
                 title: c.title,
-                message: c.message,
+                message: c.message || c.content,
                 revealDate: c.reveal_date || c.revealDate,
                 revealed: !!c.revealed
             }));
             if (dailyMessages.length) result.dailyMessages = dailyMessages.map(m => m.content);
             if (specialDates.length) result.specialDates = specialDates.map(sd => ({
                 id: sd.id,
-                name: sd.name,
+                name: sd.name || sd.title,
                 date: sd.date,
                 emoji: sd.emoji,
                 recurring: !!sd.recurring
@@ -1184,9 +1220,17 @@ const handleAdd = () => {
             <div className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center overflow-hidden">
                 <img src={photo.imageUrl} alt={photo.title}
                     className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => { e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML =
-                        '<span class="text-4xl p-4">🖼️</span>'; }} />
+                    onError={(e) => {
+                        const target = e.target;
+                        if (!target) return;
+
+                        const fallbackContainer = target.parentElement || target.closest('div');
+                        target.style.display = 'none';
+
+                        if (fallbackContainer) {
+                            fallbackContainer.innerHTML = '<span class="text-4xl p-4">🖼️</span>';
+                        }
+                    }} />
             </div>
             <div className="p-3">
                 <h4 className="font-semibold text-sm">{photo.title}</h4>
