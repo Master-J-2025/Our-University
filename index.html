@@ -328,8 +328,7 @@
 
         // ==================== CONSTANTS ====================
         const APP_PASSWORD = 'Amor2026';
-        const DEFAULT_START_DATE = '2024-01-15';
-        const STORAGE_KEY = 'nuestro_universo_data';
+        const STORAGE_KEY = 'nuestro_universo_data_v2';
 
         const SECTION_TABLES = {
             memories: 'memories',
@@ -469,7 +468,9 @@
             const settings = {
                 id: 1,
                 couple_name_1: data.coupleName1 || '',
-                couple_name_2: data.coupleName2 || ''
+                couple_name_2: data.coupleName2 || '',
+                start_date: data.startDate || '',
+                main_quote: data.mainQuote || ''
             };
             const { error: settingsError } = await window.supabaseClient
                 .from('couple_settings')
@@ -557,6 +558,8 @@
             if (coupleSettings.length) {
                 result.coupleName1 = coupleSettings[0].couple_name_1 || result.coupleName1;
                 result.coupleName2 = coupleSettings[0].couple_name_2 || result.coupleName2;
+                result.startDate = coupleSettings[0].start_date || result.startDate;
+                result.mainQuote = coupleSettings[0].main_quote || result.mainQuote;
             }
 
             return result;
@@ -569,68 +572,20 @@
                 try { return JSON.parse(saved); } catch (e) { /* fallback */ }
             }
             return {
-                startDate: DEFAULT_START_DATE,
-                coupleName1: 'Ana',
-                coupleName2: 'Carlos',
-                mainQuote: 'Cada día a tu lado es una nueva estrella en nuestro universo.',
-                memories: [
-                    { id: 1, title: 'Primer Mensaje', date: '2024-01-10', description: 'Aquel mensaje que lo cambió todo. Recuerdo que era tarde y no podía dejar de sonreír.', emoji: '💬',
-                        photos: [] },
-                    { id: 2, title: 'Primer Abrazo', date: '2024-01-20', description: 'Fue en el parque, bajo las estrellas. El mundo se detuvo por un instante.', emoji: '🤗',
-                        photos: [] },
-                    { id: 3, title: 'Primer Beso', date: '2024-02-14', description: 'San Valentín, el día perfecto. Las mariposas no se fueron nunca más.',
-                        emoji: '💋', photos: [] },
-                    { id: 4, title: 'Primer "Te Amo"', date: '2024-03-01', description: 'Lo dijiste susurrando, y el universo entero conspiró a nuestro favor.',
-                        emoji: '❤️', photos: [] },
-                    { id: 5, title: 'Primer Regalo', date: '2024-04-05', description: 'Un collar con una estrella. Dijiste que era para recordarme que siempre brillo.',
-                        emoji: '🎁', photos: [] },
-                    { id: 6, title: 'Primer Aniversario', date: '2025-01-15', description: 'Un año de magia. Celebramos con una cena bajo las estrellas.',
-                    emoji: '🎉', photos: [] },
-                ],
+                startDate: '',
+                coupleName1: '',
+                coupleName2: '',
+                mainQuote: '',
+                memories: [],
                 photos: [],
-                letters: [
-                    { id: 1, category: 'Cuando me extrañes', title: 'Para cuando me extrañes', content: 'Cierra los ojos y recuerda mi voz...',
-                        createdAt: '2024-06-01' },
-                    { id: 2, category: 'Cuando estés triste', title: 'Un abrazo en palabras',
-                        content: 'No estás solo/a. Estoy contigo aunque no me veas...', createdAt: '2024-07-15' },
-                    { id: 3, category: 'Cuando estés feliz', title: 'Celebra conmigo',
-                        content: 'Tu sonrisa ilumina todo. Hoy el universo celebra contigo...', createdAt: '2024-08-20' },
-                ],
-                songs: [
-                    { id: 1, name: 'Perfect', artist: 'Ed Sheeran', reason: 'Nuestra canción desde el primer baile.',
-                        spotify: 'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',
-                        youtube: 'https://www.youtube.com/watch?v=2Vv-BfVoq4g' },
-                    { id: 2, name: 'All of Me', artist: 'John Legend', reason: 'Porque te amo con cada parte de mí.',
-                        spotify: 'https://open.spotify.com/track/3Uwt0FkA3xN2K1u0pOmn8W',
-                        youtube: 'https://www.youtube.com/watch?v=450p7goxZqg' },
-                ],
-                dreams: [
-                    { id: 1, text: 'Viajar a París juntos', completed: false },
-                    { id: 2, text: 'Ver un amanecer en la playa', completed: true },
-                    { id: 3, text: 'Graduarnos juntos', completed: false },
-                    { id: 4, text: 'Construir nuestra casa', completed: false },
-                ],
-                timeCapsules: [
-                    { id: 1, title: 'Carta para 2027', message: 'Esto es un secreto que solo podrás leer en el futuro...',
-                        revealDate: '2027-01-01', revealed: false },
-                    { id: 2, title: 'Recuerdo de graduación', message: 'Para el día que ambos nos graduemos...',
-                        revealDate: '2026-12-15', revealed: false },
-                ],
-                dailyMessages: [
-                    'Eres la razón por la que creo en la magia.',
-                    'Cada día a tu lado es un regalo del universo.',
-                    'Tu sonrisa ilumina incluso los días más oscuros.',
-                    'Juntos somos invencibles.',
-                    'El amor que compartimos es de otro mundo.',
-                    'Gracias por ser mi hogar.',
-                ],
-                specialDates: [
-                    { id: 1, name: 'Aniversario', date: '2025-01-15', emoji: '💍', recurring: true },
-                    { id: 2, name: 'Cumpleaños de Ana', date: '2024-05-20', emoji: '🎂', recurring: true },
-                    { id: 3, name: 'Cumpleaños de Carlos', date: '2024-09-10', emoji: '🎈', recurring: true },
-                ],
+                letters: [],
+                songs: [],
+                dreams: [],
+                timeCapsules: [],
+                dailyMessages: [],
+                specialDates: [],
                 notifications: [],
-                anniversaryMoments: [],
+                anniversaryMoments: []
             };
         };
 
@@ -938,7 +893,8 @@
         // ==================== NAVIGATION ====================
         const Navigation = ({ currentSection, onNavigate, data }) => {
             const [mobileOpen, setMobileOpen] = useState(false);
-            const daysTogether = getDaysBetween(data.startDate);
+            const activeStartDate = data.startDate || new Date().toISOString().split('T')[0];
+            const daysTogether = getDaysBetween(activeStartDate);
             const sections = [
                 { id: 'home', icon: '🏠', label: 'Inicio' },
                 { id: 'memories', icon: '⭐', label: 'Recuerdos' },
@@ -1002,8 +958,9 @@
 
         // ==================== HOME SECTION ====================
         const HomeSection = ({ data, setData, onNavigate }) => {
-            const daysTogether = getDaysBetween(data.startDate);
-            const nextAnniversary = getNextAnniversary(data.startDate);
+            const activeStartDate = data.startDate || new Date().toISOString().split('T')[0];
+            const daysTogether = getDaysBetween(activeStartDate);
+            const nextAnniversary = getNextAnniversary(activeStartDate);
             const [countdown, setCountdown] = useState(getCountdown(
                 nextAnniversary.toISOString().split('T')[0]
             ));
