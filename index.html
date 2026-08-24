@@ -14,6 +14,8 @@
     </script>
     <script src="https://unpkg.com/framer-motion@10/dist/framer-motion.js">
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Dancing+Script:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -329,6 +331,137 @@
         const DEFAULT_START_DATE = '2024-01-15';
         const STORAGE_KEY = 'nuestro_universo_data';
 
+        const SECTION_TABLES = {
+            memories: 'memories',
+            photos: 'photos',
+            letters: 'letters',
+            songs: 'songs',
+            dreams: 'dreams',
+            timeCapsules: 'capsules',
+            dailyMessages: 'messages',
+            specialDates: 'dates',
+            anniversaryMoments: 'moments',
+            notifications: 'warnings'
+        };
+
+        const syncSectionsToSupabase = async (data) => {
+            if (!window.supabaseClient) return;
+
+            const tables = [
+                { table: 'memories', rows: data.memories || [] },
+                { table: 'photos', rows: data.photos || [] },
+                { table: 'letters', rows: data.letters || [] },
+                { table: 'songs', rows: data.songs || [] },
+                { table: 'dreams', rows: data.dreams || [] },
+                { table: 'capsules', rows: (data.timeCapsules || []).map(c => ({
+                    id: c.id,
+                    title: c.title,
+                    message: c.message,
+                    reveal_date: c.revealDate,
+                    revealed: !!c.revealed
+                })) },
+                { table: 'messages', rows: (data.dailyMessages || []).map((content, index) => ({
+                    id: index + 1,
+                    content
+                })) },
+                { table: 'dates', rows: (data.specialDates || []).map(sd => ({
+                    id: sd.id,
+                    name: sd.name,
+                    date: sd.date,
+                    emoji: sd.emoji,
+                    recurring: !!sd.recurring
+                })) },
+                { table: 'moments', rows: (data.anniversaryMoments || []).map(m => ({
+                    id: m.id,
+                    title: m.title,
+                    description: m.description,
+                    image_url: m.imageUrl || null,
+                    anniversary_number: m.anniversaryNumber,
+                    anniversary_date: m.anniversaryDate
+                })) }
+            ];
+
+            for (const item of tables) {
+                if (!Array.isArray(item.rows) || item.rows.length === 0) continue;
+                const { error } = await window.supabaseClient
+                    .from(item.table)
+                    .upsert(item.rows, { onConflict: 'id' });
+
+                if (error) {
+                    console.warn('Supabase sync error in ' + item.table + ':', error.message);
+                }
+            }
+        };
+
+        const loadSectionsFromSupabase = async () => {
+            if (!window.supabaseClient) return null;
+
+            const tables = [
+                'memories',
+                'photos',
+                'letters',
+                'songs',
+                'dreams',
+                'capsules',
+                'messages',
+                'dates',
+                'moments'
+            ];
+
+            const loaded = await Promise.all(tables.map(async (table) => {
+                const { data, error } = await window.supabaseClient.from(table).select('*');
+                if (error) {
+                    console.warn('Supabase load error in ' + table + ':', error.message);
+                    return { table, rows: [] };
+                }
+                return { table, rows: data || [] };
+            }));
+
+            const defaults = getInitialData();
+            const result = { ...defaults };
+
+            const memories = loaded.find(x => x.table === 'memories')?.rows || [];
+            const photos = loaded.find(x => x.table === 'photos')?.rows || [];
+            const letters = loaded.find(x => x.table === 'letters')?.rows || [];
+            const songs = loaded.find(x => x.table === 'songs')?.rows || [];
+            const dreams = loaded.find(x => x.table === 'dreams')?.rows || [];
+            const timeCapsules = loaded.find(x => x.table === 'capsules')?.rows || [];
+            const dailyMessages = loaded.find(x => x.table === 'messages')?.rows || [];
+            const specialDates = loaded.find(x => x.table === 'dates')?.rows || [];
+            const anniversaryMoments = loaded.find(x => x.table === 'moments')?.rows || [];
+
+            if (memories.length) result.memories = memories.map(m => ({ ...m, photos: Array.isArray(m.photos) ? m.photos : [] }));
+            if (photos.length) result.photos = photos.map(p => ({ ...p, imageUrl: p.image_url || p.imageUrl || '' }));
+            if (letters.length) result.letters = letters;
+            if (songs.length) result.songs = songs.map(s => ({ ...s, name: s.name || s.title, audioUrl: s.audio_url || s.audioUrl || null }));
+            if (dreams.length) result.dreams = dreams.map(d => ({ ...d, text: d.text || d.title, completed: !!d.completed }));
+            if (timeCapsules.length) result.timeCapsules = timeCapsules.map(c => ({
+                id: c.id,
+                title: c.title,
+                message: c.message,
+                revealDate: c.reveal_date || c.revealDate,
+                revealed: !!c.revealed
+            }));
+            if (dailyMessages.length) result.dailyMessages = dailyMessages.map(m => m.content);
+            if (specialDates.length) result.specialDates = specialDates.map(sd => ({
+                id: sd.id,
+                name: sd.name,
+                date: sd.date,
+                emoji: sd.emoji,
+                recurring: !!sd.recurring
+            }));
+            if (anniversaryMoments.length) result.anniversaryMoments = anniversaryMoments.map(m => ({
+                id: m.id,
+                title: m.title,
+                description: m.description,
+                anniversaryNumber: m.anniversary_number,
+                anniversaryDate: m.anniversary_date,
+                imageUrl: m.image_url || m.imageUrl || ''
+            }));
+
+            return result;
+        };
+
         // ==================== HELPER FUNCTIONS ====================
         const getInitialData = () => {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -558,10 +691,34 @@
             const [notificationPermission, setNotificationPermission] = useState(false);
             const addToast = useToast();
 
+            const [supabaseReady, setSupabaseReady] = useState(false);
+
+            useEffect(() => {
+                const hydrateFromSupabase = async () => {
+                    if (!window.supabaseClient) {
+                        setSupabaseReady(true);
+                        return;
+                    }
+
+                    const remoteData = await loadSectionsFromSupabase();
+                    if (remoteData) {
+                        setData(remoteData);
+                    }
+                    setSupabaseReady(true);
+                };
+
+                hydrateFromSupabase();
+            }, []);
+
             // Save data on changes
             useEffect(() => {
                 if (isLoggedIn) saveData(data);
             }, [data, isLoggedIn]);
+
+            useEffect(() => {
+                if (!isLoggedIn || !supabaseReady || !window.supabaseClient) return;
+                syncSectionsToSupabase(data);
+            }, [data, isLoggedIn, supabaseReady]);
 
             // Request notification permission
             useEffect(() => {
