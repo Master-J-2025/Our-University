@@ -1,6 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
+const SUPABASE_URL = 'https://jtyuqsitdzfsyuhjxrio.supabase.com';
+const SUPABASE_KEY = 'sb_publishable_a5NTAcU7oj683EWc5pz7og__9BJi_9D';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+if (!supabaseClient) {
+  console.warn(
+    "Supabase no está cargado. Asegúrate de cargar el SDK antes de este archivo: https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  );
+}
+
+window.supabaseClient = supabaseClient;
+window.supabase = supabaseClient || window.supabase;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { supabase: supabaseClient };
+}
+
+const supabase = supabaseClient;
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.supabase = supabase;
+}
+
+window.supabaseClient = supabase;
