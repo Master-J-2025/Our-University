@@ -347,11 +347,23 @@
         const syncSectionsToSupabase = async (data) => {
             if (!window.supabaseClient) return;
 
+            const isUuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+            const getStableLegacyUuid = (id) => {
+                if (id === undefined || id === null) return crypto.randomUUID();
+                const key = `nuestro_universo_uuid_${id}`;
+                const stored = localStorage.getItem(key);
+                if (stored) return stored;
+                const uuid = crypto.randomUUID();
+                localStorage.setItem(key, uuid);
+                return uuid;
+            };
+
             const withOptionalUuid = (id, row) => {
-                const uuid = typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+                const uuid = isUuid(id)
                     ? id
-                    : null;
-                return uuid ? { id: uuid, ...row } : row;
+                    : getStableLegacyUuid(id);
+                return { id: uuid, ...row };
             };
 
             const tables = [
@@ -414,9 +426,13 @@
 
             for (const item of tables) {
                 if (!Array.isArray(item.rows) || item.rows.length === 0) continue;
+                const rows = item.rows.map((row, index) => ({
+                    ...row,
+                    id: isUuid(row.id) ? row.id : getStableLegacyUuid(`${item.table}-${row.id ?? index}`)
+                }));
                 const { error } = await window.supabaseClient
                     .from(item.table)
-                    .upsert(item.rows, { onConflict: 'id' });
+                    .upsert(rows, { onConflict: 'id' });
 
                 if (error) {
                     console.warn('Supabase sync error in ' + item.table + ':', error.message);
@@ -1148,18 +1164,42 @@ const [newPhoto, setNewPhoto] = useState({
 });
 const photoRef = useRef(null);
 
-const handleAdd = () => {
+const handleAdd = async () => {
     if (!newPhoto.title && !newPhoto.imageUrl && !newPhoto.imageFile) {
         addToast('Título e imagen son obligatorios', 'error');
         return;
     }
-    
+
     let imageUrl = newPhoto.imageUrl;
     if (newPhoto.imageFile) {
-        imageUrl = URL.createObjectURL(newPhoto.imageFile); // ← CONVIERTE ARCHIVO A URL
+        if (!window.supabaseClient) {
+            addToast('No hay conexión con Supabase', 'error');
+            return;
+        }
+
+        const file = newPhoto.imageFile;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+        const filePath = `${crypto.randomUUID()}-${safeName}`;
+        const { error } = await window.supabaseClient.storage
+            .from('photos')
+            .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+        if (error) {
+            console.warn('Supabase photo upload error:', error.message);
+            addToast('No se pudo subir la foto', 'error');
+            return;
+        }
+
+        imageUrl = window.supabaseClient.storage.from('photos').getPublicUrl(filePath).data.publicUrl;
     }
-    
-    const photo = { ...newPhoto, id: generateId(), imageUrl };
+
+    const photo = {
+        id: crypto.randomUUID(),
+        title: newPhoto.title,
+        date: newPhoto.date,
+        description: newPhoto.description,
+        imageUrl
+    };
     setData(prev => ({ ...prev, photos: [...prev.photos, photo] }));
     setNewPhoto({ title: '', date: '', description: '', imageUrl: '', imageFile: null });
     setShowForm(false);
