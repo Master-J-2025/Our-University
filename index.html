@@ -438,6 +438,18 @@
                     console.warn('Supabase sync error in ' + item.table + ':', error.message);
                 }
             }
+
+            const settings = {
+                id: 1,
+                couple_name_1: data.coupleName1 || '',
+                couple_name_2: data.coupleName2 || ''
+            };
+            const { error: settingsError } = await window.supabaseClient
+                .from('couple_settings')
+                .upsert(settings, { onConflict: 'id' });
+            if (settingsError) {
+                console.warn('Supabase sync error in couple_settings:', settingsError.message);
+            }
         };
 
         const loadSectionsFromSupabase = async () => {
@@ -457,7 +469,8 @@
                 'capsules',
                 'messages',
                 'dates',
-                'moments'
+                'moments',
+                'couple_settings'
             ];
 
             const loaded = await Promise.all(tables.map(async (table) => {
@@ -481,6 +494,7 @@
             const dailyMessages = loaded.find(x => x.table === 'messages')?.rows || [];
             const specialDates = loaded.find(x => x.table === 'dates')?.rows || [];
             const anniversaryMoments = loaded.find(x => x.table === 'moments')?.rows || [];
+            const coupleSettings = loaded.find(x => x.table === 'couple_settings')?.rows || [];
 
             if (memories.length) result.memories = memories.map(m => ({ ...m, photos: Array.isArray(m.photos) ? m.photos : [] }));
             if (photos.length) result.photos = photos.map(p => ({ ...p, imageUrl: p.image_url || p.imageUrl || '' }));
@@ -510,6 +524,10 @@
                 anniversaryDate: m.anniversary_date,
                 imageUrl: m.image_url || m.imageUrl || ''
             }));
+            if (coupleSettings.length) {
+                result.coupleName1 = coupleSettings[0].couple_name_1 || result.coupleName1;
+                result.coupleName2 = coupleSettings[0].couple_name_2 || result.coupleName2;
+            }
 
             return result;
         };
@@ -1206,8 +1224,33 @@ const handleAdd = async () => {
     addToast('📸 Foto añadida', 'success');
 };
 
-            const handleDelete = (id) => {
-                setData(prev => ({ ...prev, photos: prev.photos.filter(p => p.id !== id) }));
+            const handleDelete = async (photo) => {
+                if (window.supabaseClient) {
+                    const { error: databaseError } = await window.supabaseClient
+                        .from('photos')
+                        .delete()
+                        .eq('id', photo.id);
+
+                    if (databaseError) {
+                        console.warn('Supabase photo delete error:', databaseError.message);
+                        addToast('No se pudo eliminar la foto de la BD', 'error');
+                        return;
+                    }
+
+                    const storagePrefix = '/storage/v1/object/public/photos/';
+                    const storageIndex = (photo.imageUrl || '').indexOf(storagePrefix);
+                    if (storageIndex !== -1) {
+                        const filePath = decodeURIComponent(photo.imageUrl.slice(storageIndex + storagePrefix.length));
+                        const { error: storageError } = await window.supabaseClient.storage
+                            .from('photos')
+                            .remove([filePath]);
+                        if (storageError) {
+                            console.warn('Supabase photo file delete error:', storageError.message);
+                        }
+                    }
+                }
+
+                setData(prev => ({ ...prev, photos: prev.photos.filter(p => p.id !== photo.id) }));
                 addToast('Foto eliminada', 'info');
             };
 
@@ -1276,7 +1319,7 @@ const handleAdd = async () => {
                 <h4 className="font-semibold text-sm">{photo.title}</h4>
                 {photo.date && <p className="text-xs text-cyan-400">{formatDate(photo.date)}</p>}
                 {photo.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{photo.description}</p>}
-                <button onClick={() => handleDelete(photo.id)}
+                  <button onClick={() => handleDelete(photo)}
                     className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️ Eliminar</button>
             </div>
         </div>
