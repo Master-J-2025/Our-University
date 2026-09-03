@@ -460,12 +460,19 @@
                     continue;
                 }
 
+                if (uniqueRows.length === 0) continue;
+
                 const { error } = await window.supabaseClient
                     .from(item.table)
                     .upsert(uniqueRows, { onConflict: 'id' });
 
                 if (error) {
                     console.warn('Supabase sync error in ' + item.table + ':', error.message);
+                    if (item.table === 'songs') {
+                        window.dispatchEvent(new CustomEvent('supabase-song-sync-error', {
+                            detail: error.message
+                        }));
+                    }
                 }
             }
 
@@ -1431,7 +1438,7 @@ const handleAdd = async () => {
 const [reproduciendoId, setReproduciendoId] = useState(null);
 const audioRef = useRef(null);
 
-const handleAdd = () => {
+const handleAdd = async () => {
     if (!newSong.name || !newSong.artist) {
         addToast('Nombre y artista son obligatorios', 'error');
         return;
@@ -1439,13 +1446,31 @@ const handleAdd = () => {
     
     let audioUrl = null;
     if (newSong.audioFile) {
-        audioUrl = URL.createObjectURL(newSong.audioFile); // ← CONVIERTE ARCHIVO A URL
+        if (!window.supabaseClient) {
+            addToast('No hay conexión con Supabase', 'error');
+            return;
+        }
+
+        const file = newSong.audioFile;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+        const filePath = `${crypto.randomUUID()}-${safeName}`;
+        const { error: uploadError } = await window.supabaseClient.storage
+            .from('songs')
+            .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+        if (uploadError) {
+            console.warn('Supabase song upload error:', uploadError.message);
+            addToast('No se pudo subir el audio. Crea el bucket songs en Storage.', 'error');
+            return;
+        }
+
+        audioUrl = window.supabaseClient.storage.from('songs').getPublicUrl(filePath).data.publicUrl;
     }
     
     const song = { 
         ...newSong, 
-        id: generateId(),
-        audioUrl // ← AGREGA URL DEL AUDIO
+        id: crypto.randomUUID(),
+        audioUrl
     };
     
     setData(prev => ({ ...prev, songs: [...prev.songs, song] }));
@@ -1454,8 +1479,22 @@ const handleAdd = () => {
     addToast('🎵 Canción añadida', 'success');
 };
 
-            const handleDelete = (id) => {
-                setData(prev => ({ ...prev, songs: prev.songs.filter(s => s.id !== id) }));
+            const handleDelete = async (song) => {
+                if (window.supabaseClient && song.audioUrl) {
+                    const storagePrefix = '/storage/v1/object/public/songs/';
+                    const storageIndex = song.audioUrl.indexOf(storagePrefix);
+                    if (storageIndex !== -1) {
+                        const filePath = decodeURIComponent(song.audioUrl.slice(storageIndex + storagePrefix.length));
+                        const { error: storageError } = await window.supabaseClient.storage
+                            .from('songs')
+                            .remove([filePath]);
+                        if (storageError) {
+                            console.warn('Supabase song file delete error:', storageError.message);
+                        }
+                    }
+                }
+
+                setData(prev => ({ ...prev, songs: prev.songs.filter(s => s.id !== song.id) }));
                 addToast('Canción eliminada', 'info');
             };
 
@@ -1524,7 +1563,7 @@ const handleAdd = () => {
                     {song.youtube && <a href={song.youtube} target="_blank" rel="noopener"
                         className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">▶️ YouTube</a>}
                 </div>
-                <button onClick={() => handleDelete(song.id)}
+                <button onClick={() => handleDelete(song)}
                     className="text-xs text-red-400 hover:text-red-300 mt-2">🗑️</button>
             </div>
         </div>
