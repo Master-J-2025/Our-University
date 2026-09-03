@@ -541,7 +541,14 @@
             if (memories.length) result.memories = memories.map(m => ({ ...m, photos: Array.isArray(m.photos) ? m.photos : [] }));
             if (photos.length) result.photos = photos.map(p => ({ ...p, imageUrl: p.image_url || p.imageUrl || '' }));
             if (letters.length) result.letters = letters;
-            if (songs.length) result.songs = songs.map(s => ({ ...s, name: s.name || s.title, audioUrl: s.audio_url || s.audioUrl || null }));
+            if (songs.length) result.songs = songs.map(s => {
+                const audioUrl = s.audio_url || s.audioUrl || null;
+                return {
+                    ...s,
+                    name: s.name || s.title,
+                    audioUrl: audioUrl && !audioUrl.startsWith('blob:') ? audioUrl : null
+                };
+            });
             if (dreams.length) result.dreams = dreams.map(d => ({ ...d, text: d.text || d.title, completed: !!d.completed }));
             if (timeCapsules.length) result.timeCapsules = timeCapsules.map(c => ({
                 id: c.id,
@@ -1480,6 +1487,19 @@ const handleAdd = async () => {
 };
 
             const handleDelete = async (song) => {
+                if (window.supabaseClient) {
+                    const { error: databaseError } = await window.supabaseClient
+                        .from('songs')
+                        .delete()
+                        .eq('id', song.id);
+
+                    if (databaseError) {
+                        console.warn('Supabase song delete error:', databaseError.message);
+                        addToast('No se pudo eliminar la canción de la BD', 'error');
+                        return;
+                    }
+                }
+
                 if (window.supabaseClient && song.audioUrl) {
                     const storagePrefix = '/storage/v1/object/public/songs/';
                     const storageIndex = song.audioUrl.indexOf(storagePrefix);
@@ -1549,10 +1569,15 @@ const handleAdd = async () => {
                         <audio 
                             ref={reproduciendoId === song.id ? audioRef : null}
                             src={song.audioUrl}
+                            preload="metadata"
                             controls
                             className="w-full h-8"
                             onPlay={() => setReproduciendoId(song.id)}
                             onPause={() => setReproduciendoId(null)}
+                            onError={() => {
+                                setReproduciendoId(null);
+                                addToast('No se puede reproducir este audio. Vuelve a subirlo.', 'error');
+                            }}
                         />
                     </div>
                 )}
