@@ -434,9 +434,12 @@
                     ...row,
                     id: isUuid(row.id) ? row.id : getStableLegacyUuid(`${item.table}-${row.id ?? index}`)
                 }));
+                const uniqueRows = rows.filter((row, index, allRows) =>
+                    allRows.findIndex(candidate => candidate.id === row.id) === index
+                );
 
                 if (item.table === 'messages') {
-                    const uniqueRows = rows.filter((row, index, allRows) =>
+                    const uniqueMessages = uniqueRows.filter((row, index, allRows) =>
                         allRows.findIndex(candidate => candidate.content === row.content) === index
                     );
                     const { error: messagesDeleteError } = await window.supabaseClient
@@ -447,10 +450,10 @@
                         console.warn('Supabase message delete error:', messagesDeleteError.message);
                         continue;
                     }
-                    if (uniqueRows.length === 0) continue;
+                    if (uniqueMessages.length === 0) continue;
                     const { error: messagesInsertError } = await window.supabaseClient
                         .from('messages')
-                        .insert(uniqueRows);
+                        .insert(uniqueMessages);
                     if (messagesInsertError) {
                         console.warn('Supabase sync error in messages:', messagesInsertError.message);
                     }
@@ -459,7 +462,7 @@
 
                 const { error } = await window.supabaseClient
                     .from(item.table)
-                    .upsert(rows, { onConflict: 'id' });
+                    .upsert(uniqueRows, { onConflict: 'id' });
 
                 if (error) {
                     console.warn('Supabase sync error in ' + item.table + ':', error.message);
