@@ -1,0 +1,17 @@
+[functions.issue-recovery-code]
+verify_jwt = true
+
+[functions.login-with-username]
+verify_jwt = false
+
+[functions.reset-password]
+verify_jwt = false
+
+[functions.manage-push-subscription]
+verify_jwt = true
+
+[functions.dispatch-couple-push]
+verify_jwt = false
+
+[functions.send-scheduled-notifications]
+verify_jwt = false
