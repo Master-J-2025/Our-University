@@ -1,26 +1,6 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
 import webPush from 'npm:web-push@3.6.7';
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
-const vapidSubject = Deno.env.get('VAPID_SUBJECT');
-const appUrl = Deno.env.get('APP_URL');
-
-if (!supabaseUrl || !serviceRoleKey || !vapidPublicKey || !vapidPrivateKey || !vapidSubject || !appUrl) {
-    throw new Error('Faltan secretos requeridos para el envío push.');
-}
-
-export const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false }
-});
-
-webPush.setVapidDetails(
-    vapidSubject,
-    vapidPublicKey,
-    vapidPrivateKey
-);
+import { adminClient } from './admin.ts';
+import { assertPushConfiguration } from './push-config.js';
 
 export const sendActivityPush = async (activity: {
     id: string;
@@ -28,6 +8,13 @@ export const sendActivityPush = async (activity: {
     event_type: string;
     details?: Record<string, unknown> | null;
 }) => {
+    assertPushConfiguration(name => Deno.env.get(name));
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
+    const vapidSubject = Deno.env.get('VAPID_SUBJECT')!;
+    const appUrl = Deno.env.get('APP_URL')!;
+    webPush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+
     const eventKey = `activity:${activity.id}`;
     const { data: claimed, error: claimError } = await adminClient.rpc('claim_notification_delivery', {
         requested_event_key: eventKey,

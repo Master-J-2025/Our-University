@@ -1,5 +1,6 @@
 import { sendActivityPush } from '../_shared/push.ts';
 import { handleOptions, hasWebhookSecret, jsonResponse, originIsAllowed } from '../_shared/http.ts';
+import { MissingPushConfigError } from '../_shared/push-config.js';
 
 Deno.serve(async request => {
     if (request.method === 'OPTIONS') return handleOptions(request);
@@ -18,6 +19,9 @@ Deno.serve(async request => {
         return jsonResponse(request, { ok: true, ...result });
     } catch (error) {
         console.error('[Push] No se pudo procesar el webhook:', error);
+        if (error instanceof MissingPushConfigError) {
+            return jsonResponse(request, { error: error.message }, 503);
+        }
         return jsonResponse(request, { error: error instanceof Error ? error.message : 'Error interno.' }, 500);
     }
 });

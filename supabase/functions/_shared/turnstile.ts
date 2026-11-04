@@ -1,6 +1,13 @@
+export class MissingTurnstileSecretError extends Error {
+    constructor() {
+        super('Falta configurar TURNSTILE_SECRET_KEY en los secretos de Edge Functions de Supabase.');
+        this.name = 'MissingTurnstileSecretError';
+    }
+}
+
 export const verifyTurnstileToken = async (token: unknown) => {
     const secret = Deno.env.get('TURNSTILE_SECRET_KEY');
-    if (!secret) throw new Error('Falta configurar TURNSTILE_SECRET_KEY en Supabase.');
+    if (!secret) throw new MissingTurnstileSecretError();
     if (typeof token !== 'string' || token.length === 0 || token.length > 2048) return false;
 
     const body = new URLSearchParams({ secret, response: token });

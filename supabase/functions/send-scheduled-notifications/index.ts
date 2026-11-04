@@ -1,6 +1,8 @@
-import { adminClient, sendActivityPush } from '../_shared/push.ts';
+import { adminClient } from '../_shared/admin.ts';
+import { sendActivityPush } from '../_shared/push.ts';
 import { handleOptions, hasWebhookSecret, jsonResponse, originIsAllowed } from '../_shared/http.ts';
 import { getDateOccurrence, getDaysUntilDate, getTodayInTimezone } from '../_shared/calendar.js';
+import { assertPushConfiguration, MissingPushConfigError } from '../_shared/push-config.js';
 
 const insertActivity = async (
     coupleId: string,
@@ -20,13 +22,14 @@ const insertActivity = async (
     if (data) await sendActivityPush(data);
 };
 
-Deno.serve(async request => {
+Deno.serve(async (request: Request) => {
     if (request.method === 'OPTIONS') return handleOptions(request);
     if (!originIsAllowed(request)) return jsonResponse(request, { error: 'Origen no permitido.' }, 403);
     if (request.method !== 'POST') return jsonResponse(request, { error: 'Método no permitido.' }, 405);
     if (!hasWebhookSecret(request)) return jsonResponse(request, { error: 'No autorizado.' }, 401);
 
     try {
+        assertPushConfiguration((name: string) => Deno.env.get(name));
         const { data: couples, error: couplesError } = await adminClient
             .from('couples')
             .select('id, couple_settings(timezone)');
@@ -46,6 +49,7 @@ Deno.serve(async request => {
                 const targetDate = getDateOccurrence(specialDate.date, today, specialDate.recurring);
                 if (!targetDate) continue;
                 const daysBefore = getDaysUntilDate(today, targetDate);
+                if (daysBefore === null) continue;
                 if (![0, 1, 7].includes(daysBefore)) continue;
                 const year = targetDate.slice(0, 4);
                 const name = specialDate.name || specialDate.title || 'una fecha especial';
@@ -88,6 +92,9 @@ Deno.serve(async request => {
         return jsonResponse(request, { ok: true, processed: created });
     } catch (error) {
         console.error('[Notifications] Error al procesar recordatorios:', error);
+        if (error instanceof MissingPushConfigError) {
+            return jsonResponse(request, { error: error.message }, 503);
+        }
         return jsonResponse(request, { error: error instanceof Error ? error.message : 'Error interno.' }, 500);
     }
 });

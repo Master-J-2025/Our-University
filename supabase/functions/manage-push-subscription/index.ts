@@ -1,4 +1,4 @@
-import { adminClient } from '../_shared/push.ts';
+import { adminClient } from '../_shared/admin.ts';
 import { handleOptions, jsonResponse, originIsAllowed } from '../_shared/http.ts';
 
 Deno.serve(async request => {

@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { handleOptions, jsonResponse, originIsAllowed } from '../_shared/http.ts';
-import { verifyTurnstileToken } from '../_shared/turnstile.ts';
+import { verifyTurnstileToken, MissingTurnstileSecretError } from '../_shared/turnstile.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -66,6 +66,9 @@ Deno.serve(async request => {
         return jsonResponse(request, { ok: true });
     } catch (error) {
         console.error('[Recovery] Error al restablecer contraseña:', error);
+        if (error instanceof MissingTurnstileSecretError) {
+            return jsonResponse(request, { error: error.message }, 503);
+        }
         return jsonResponse(request, { error: error instanceof Error ? error.message : 'Error interno.' }, 500);
     }
 });
