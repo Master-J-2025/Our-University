@@ -1,6 +1,7 @@
         import React, { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react';
         import { createRoot } from 'react-dom/client';
         import { supabaseClient } from './supabase.js';
+        import { getActivityMessage } from './supabase/functions/_shared/activity-message.js';
         import './styles.css';
 
         window.supabaseClient = supabaseClient;
@@ -254,11 +255,7 @@
                 eventType: activity.event_type,
                 daysBefore: activity.details?.days_before,
                 sentDate: new Date(activity.created_at).toLocaleString(),
-                message: activity.event_type === 'date_reminder'
-                    ? activity.details?.message || 'Se acerca una fecha especial.'
-                    : activity.event_type === 'capsule_revealed'
-                        ? activity.details?.message || 'Una cápsula del tiempo ya está disponible.'
-                        : 'Hubo un cambio compartido en su espacio.'
+                message: getActivityMessage(activity)
             }));
             let logoUrl = '';
             if (settings?.logo_path) {
@@ -791,6 +788,7 @@
             const [session, setSession] = useState(null);
             const [coupleId, setCoupleId] = useState(null);
             const [accountUsername, setAccountUsername] = useState('');
+            const [activeMemberName, setActiveMemberName] = useState('');
             const [dataUserId, setDataUserId] = useState(null);
             const [data, setData] = useState(getInitialData);
             const dataRef = useRef(data);
@@ -844,6 +842,8 @@
                 if (!session?.user?.id) {
                     setCoupleId(null);
                     setAccountUsername('');
+                    setActiveMemberName('');
+                    localStorage.removeItem('nuestro_universo_active_couple_id');
                     setDataUserId(null);
                     setData(getInitialData());
                     syncedDataRef.current = null;
@@ -872,6 +872,13 @@
                             throw new Error(`No se pudo cargar el usuario de la cuenta: ${usernameError.message}`);
                         }
                         if (!active) return;
+                        const activeMemberStorageKey = `nuestro_universo_active_member_${currentCoupleId}`;
+                        const savedMemberName = localStorage.getItem(activeMemberStorageKey) || '';
+                        const coupleNames = [remoteData.coupleName1, remoteData.coupleName2]
+                            .map(name => name.trim())
+                            .filter(Boolean);
+                        setActiveMemberName(coupleNames.includes(savedMemberName) ? savedMemberName : '');
+                        localStorage.setItem('nuestro_universo_active_couple_id', currentCoupleId);
                         setData(remoteData);
                         setCoupleId(currentCoupleId);
                         setAccountUsername(usernameRecord?.username || '');
@@ -886,6 +893,22 @@
                 prepareAccount();
                 return () => { active = false; };
             }, [session?.user?.id]);
+
+            const handleActiveMemberChange = memberName => {
+                const normalizedName = memberName.trim();
+                const coupleNames = [data.coupleName1, data.coupleName2]
+                    .map(name => name.trim())
+                    .filter(Boolean);
+                if (!coupleId || !coupleNames.includes(normalizedName)) {
+                    setSyncError('Elige uno de los nombres configurados para la pareja.');
+                    return;
+                }
+                localStorage.setItem(`nuestro_universo_active_member_${coupleId}`, normalizedName);
+                localStorage.setItem('nuestro_universo_active_couple_id', coupleId);
+                setActiveMemberName(normalizedName);
+                setSyncError('');
+                addToast(`Los avisos de este dispositivo aparecerán como ${normalizedName}.`, 'success');
+            };
 
             useEffect(() => {
                 if (!dataReady || !coupleId || dataUserId !== session?.user?.id || !window.supabaseClient) return;
@@ -912,13 +935,10 @@
                             filter: `couple_id=eq.${coupleId}`
                         }, payload => {
                             if (table === 'couple_activity' && 'Notification' in window && Notification.permission === 'granted') {
-                                const activity = payload.new;
-                                const message = activity?.event_type === 'date_reminder'
-                                    ? activity.details?.message || 'Se acerca una fecha especial.'
-                                    : activity?.event_type === 'capsule_revealed'
-                                        ? activity.details?.message || 'Una cápsula del tiempo ya está disponible.'
-                                        : 'Hubo un cambio compartido en su espacio.';
-                                new Notification('Nuestro Universo', { body: message, icon: appIconUrl });
+                                new Notification('Nuestro Universo', {
+                                    body: getActivityMessage(payload.new),
+                                    icon: appIconUrl
+                                });
                             }
                             loadSectionsFromSupabase(coupleId)
                                 .then(setData)
@@ -1104,6 +1124,8 @@
                                     setData={setData} />}
                                 {currentSection === 'settings' && <SettingsSection data={data} setData={setData}
                                     coupleId={coupleId} username={accountUsername}
+                                    activeMemberName={activeMemberName}
+                                    onActiveMemberChange={handleActiveMemberChange}
                                     onUsernameChange={async newUsername => {
                                         const { data: savedUsername, error } = await window.supabaseClient
                                             .rpc('set_couple_username', { requested_username: newUsername.trim().toLowerCase() });
@@ -2024,7 +2046,10 @@ const handleAdd = async () => {
         };
 
         // ==================== SETTINGS SECTION ====================
-        const SettingsSection = ({ data, setData, setModal, coupleId, username, onUsernameChange }) => {
+        const SettingsSection = ({
+            data, setData, setModal, coupleId, username, activeMemberName,
+            onActiveMemberChange, onUsernameChange
+        }) => {
             const addToast = useToast();
             const [showForm, setShowForm] = useState(false);
             const [editingDate, setEditingDate] = useState(null);
@@ -2211,13 +2236,13 @@ const handleAdd = async () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label className="text-xs text-gray-400 block mb-1">Nombre 1</label>
-                                <input value={data.coupleName1} onChange={e => handleUpdateNames('coupleName1', e.target
-                                        .value)} />
+                                <input value={data.coupleName1} maxLength={80}
+                                    onChange={e => handleUpdateNames('coupleName1', e.target.value)} />
                             </div>
                             <div>
                                 <label className="text-xs text-gray-400 block mb-1">Nombre 2</label>
-                                <input value={data.coupleName2} onChange={e => handleUpdateNames('coupleName2', e.target
-                                        .value)} />
+                                <input value={data.coupleName2} maxLength={80}
+                                    onChange={e => handleUpdateNames('coupleName2', e.target.value)} />
                             </div>
                         </div>
                         <div>
@@ -2244,6 +2269,27 @@ const handleAdd = async () => {
                                 ])].map(timezone => <option key={timezone} value={timezone}>{timezone}</option>)}
                             </select>
                         </div>
+                    </div>
+
+                    <div className="glass-card p-5 space-y-3">
+                        <h3 className="font-semibold text-lg">👤 Quién está usando este dispositivo</h3>
+                        <p className="text-sm text-gray-400">
+                            Elige tu nombre para que aparezca como autor en los avisos. Esta selección solo se guarda en este navegador; si comparten dispositivo, cámbiala cuando lo use la otra persona.
+                        </p>
+                        <select
+                            value={activeMemberName}
+                            onChange={event => onActiveMemberChange(event.target.value)}
+                            aria-label="Persona que está usando este dispositivo"
+                        >
+                            <option value="">Selecciona quién está usando la app</option>
+                            {[data.coupleName1, data.coupleName2]
+                                .map(name => name.trim())
+                                .filter(Boolean)
+                                .map((name, index) => <option key={`${name}-${index}`} value={name}>{name}</option>)}
+                        </select>
+                        {!data.coupleName1.trim() || !data.coupleName2.trim()
+                            ? <p className="text-xs text-amber-200">Completa los dos nombres de la pareja para activar la identificación de autor.</p>
+                            : null}
                     </div>
 
                     <div className="glass-card p-5 space-y-4">

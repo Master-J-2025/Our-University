@@ -1,5 +1,6 @@
 import webPush from 'npm:web-push@3.6.7';
 import { adminClient } from './admin.ts';
+import { getActivityMessage } from './activity-message.js';
 import { assertPushConfiguration } from './push-config.js';
 
 export const sendActivityPush = async (activity: {
@@ -39,11 +40,7 @@ export const sendActivityPush = async (activity: {
                 : 'Novedad compartida';
         const body = typeof details.message === 'string'
             ? details.message
-            : activity.event_type === 'date_reminder'
-                ? 'Se acerca una fecha especial.'
-                : activity.event_type === 'capsule_revealed'
-                    ? 'Una cápsula del tiempo ya está disponible.'
-                    : 'Hubo un cambio compartido en su espacio.';
+            : getActivityMessage(activity);
         const payload = JSON.stringify({
             title,
             body,

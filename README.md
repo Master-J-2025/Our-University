@@ -25,6 +25,10 @@ Haz primero un respaldo de la base. No borres ni recrees el proyecto.
 2. Aplica `supabase_production.sql` desde el SQL Editor. Es una migración
    incremental: añade recuperación, historial de notificaciones, tablas de
    push, permisos y funciones. No reemplaza el esquema existente.
+   Para mostrar la persona y el cambio en cada aviso, aplica también
+   `supabase_activity_details.sql` después de completar los nombres de la pareja.
+   En Configuración, cada navegador debe elegir quién lo está usando; esa
+   selección identifica los cambios hechos desde ese dispositivo.
 3. En Authentication → Providers → Email, conserva Email/Password y desactiva
    **Confirm email**. Esta aplicación no pide ni envía correo.
 4. Crea un widget Turnstile en Cloudflare con el modo **Managed** y agrega
