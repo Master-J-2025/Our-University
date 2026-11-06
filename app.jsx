@@ -971,11 +971,24 @@
                             table,
                             filter: `couple_id=eq.${coupleId}`
                         }, payload => {
-                            if (table === 'couple_activity' && 'Notification' in window && Notification.permission === 'granted') {
-                                new Notification('Nuestro Universo', {
+                            if (table === 'couple_activity' && payload.eventType === 'INSERT'
+                                && payload.new?.id && 'Notification' in window
+                                && Notification.permission === 'granted') {
+                                const notification = {
                                     body: getActivityMessage(payload.new),
-                                    icon: appIconUrl
-                                });
+                                    icon: appIconUrl,
+                                    tag: `activity:${payload.new.id}`,
+                                    renotify: true,
+                                    vibrate: [200, 100, 200]
+                                };
+                                const serviceWorkerScope = new URL(import.meta.env.BASE_URL, window.location.href).href;
+                                navigator.serviceWorker.getRegistration(serviceWorkerScope)
+                                    .then(registration => registration
+                                        ? registration.showNotification('Nuestro Universo', notification)
+                                        : new Notification('Nuestro Universo', notification))
+                                    .catch(error => {
+                                        console.error('[Notifications] No se pudo mostrar el aviso:', error);
+                                    });
                             }
                             loadSectionsFromSupabase(coupleId)
                                 .then(setData)
@@ -2927,6 +2940,9 @@ const handleAdd = async () => {
             const addToast = useToast();
             const [pushLoading, setPushLoading] = useState(false);
             const [pushError, setPushError] = useState('');
+            const [notificationPermission, setNotificationPermission] = useState(
+                'Notification' in window ? Notification.permission : 'unsupported'
+            );
             const handleClear = () => {
                 try {
                     localStorage.setItem(`nuestro_universo_notifications_cleared_${coupleId}`, new Date().toISOString());
@@ -2942,10 +2958,34 @@ const handleAdd = async () => {
                 try {
                     if (pushEnabled) await onDisablePush();
                     else await onEnablePush();
+                    setNotificationPermission('Notification' in window ? Notification.permission : 'unsupported');
                 } catch (error) {
                     setPushError(error.message);
                 } finally {
                     setPushLoading(false);
+                }
+            };
+            const handleTestNotification = async () => {
+                setPushError('');
+                try {
+                    if (notificationPermission !== 'granted') {
+                        throw new Error('El permiso de notificaciones no está concedido en este navegador.');
+                    }
+                    const registration = await navigator.serviceWorker.getRegistration(
+                        new URL(import.meta.env.BASE_URL, window.location.href).href
+                    );
+                    if (!registration) throw new Error('No se encontró el service worker. Desactiva y activa Push nuevamente.');
+                    await registration.showNotification('Prueba de Nuestro Universo', {
+                        body: 'Si ves este aviso, Android y Chrome pueden mostrar notificaciones de este dispositivo.',
+                        icon: appIconUrl,
+                        tag: `test:${Date.now()}`,
+                        renotify: true,
+                        vibrate: [200, 100, 200]
+                    });
+                    addToast('Aviso de prueba enviado al sistema del teléfono.', 'success');
+                } catch (error) {
+                    console.error('[Notifications] Falló la prueba local:', error);
+                    setPushError(error.message || 'No se pudo mostrar el aviso de prueba.');
                 }
             };
             return (
@@ -2964,6 +3004,23 @@ const handleAdd = async () => {
                         <button className="btn-primary" onClick={handlePushToggle} disabled={pushLoading}>
                             {pushLoading ? 'Actualizando...' : pushEnabled ? 'Desactivar en este dispositivo' : 'Activar notificaciones push'}
                         </button>
+                        <div className="text-xs text-gray-400 space-y-1" aria-live="polite">
+                            <p>Permiso de Chrome: {notificationPermission === 'granted'
+                                ? 'permitido'
+                                : notificationPermission === 'denied'
+                                    ? 'bloqueado'
+                                    : notificationPermission === 'default'
+                                        ? 'pendiente'
+                                        : 'no compatible'}</p>
+                            <p>Suscripción de este navegador: {pushEnabled ? 'activa' : 'no activa'}</p>
+                        </div>
+                        <button className="btn-ghost btn-sm" onClick={handleTestNotification}
+                            disabled={notificationPermission !== 'granted'}>
+                            Probar aviso en este teléfono
+                        </button>
+                        <p className="text-xs text-gray-500">
+                            Esta prueba solo comprueba la pantalla de avisos del teléfono; no prueba el envío desde el servidor. El sonido, el modo No molestar y las restricciones de batería dependen de Android y de la configuración de notificaciones de Chrome.
+                        </p>
                         {pushError && <p className="text-sm text-red-300" role="alert">{pushError}</p>}
                         {!import.meta.env.VITE_VAPID_PUBLIC_KEY && (
                             <p className="text-xs text-amber-200">Push requiere configuración adicional del servidor.</p>

@@ -17,7 +17,9 @@ self.addEventListener('push', event => {
     body: payload.body || 'Hay una novedad en su espacio.',
     icon: payload.icon || './app-icon-192.png',
     badge: payload.badge || './app-icon-192.png',
-    tag: payload.tag || 'nuestro-universo',
+    tag: payload.tag || `nuestro-universo-${Date.now()}`,
+    renotify: true,
+    vibrate: [200, 100, 200],
     data: { url: payload.url || './' }
   };
   event.waitUntil(self.registration.showNotification(payload.title || 'Nuestro Universo', options));
