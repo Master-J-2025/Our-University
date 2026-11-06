@@ -2,6 +2,7 @@
         import { createRoot } from 'react-dom/client';
         import { supabaseClient } from './supabase.js';
         import { getActivityMessage } from './supabase/functions/_shared/activity-message.js';
+        import { getInitialActivitySeenAt, getNewestActivityTimestamp, getUnseenActivities } from './activity-inbox.js';
         import './styles.css';
 
         window.supabaseClient = supabaseClient;
@@ -254,6 +255,7 @@
                 id: activity.id,
                 eventType: activity.event_type,
                 daysBefore: activity.details?.days_before,
+                createdAt: activity.created_at,
                 sentDate: new Date(activity.created_at).toLocaleString(),
                 message: getActivityMessage(activity)
             }));
@@ -798,6 +800,8 @@
             const [guideTourOpen, setGuideTourOpen] = useState(false);
             const [guideTourStep, setGuideTourStep] = useState(0);
             const guideTourStartedForRef = useRef(null);
+            const activityInboxInitializedForRef = useRef(null);
+            const [activitySeenAt, setActivitySeenAt] = useState('');
             const [modalContent, setModalContent] = useState(null);
             const [pushEnabled, setPushEnabled] = useState(false);
             const [accountLoading, setAccountLoading] = useState(true);
@@ -848,6 +852,8 @@
                     setActiveMemberName('');
                     setGuideTourOpen(false);
                     guideTourStartedForRef.current = null;
+                    activityInboxInitializedForRef.current = null;
+                    setActivitySeenAt('');
                     localStorage.removeItem('nuestro_universo_active_couple_id');
                     setDataUserId(null);
                     setData(getInitialData());
@@ -913,6 +919,44 @@
                 setGuideTourStep(0);
                 setGuideTourOpen(true);
             }, [dataReady, coupleId, dataUserId, session?.user?.id, addToast]);
+
+            useEffect(() => {
+                if (!dataReady || !coupleId || dataUserId !== session?.user?.id
+                    || activityInboxInitializedForRef.current === coupleId) return;
+                activityInboxInitializedForRef.current = coupleId;
+                const storageKey = `nuestro_universo_activity_seen_${coupleId}`;
+                try {
+                    const savedSeenAt = localStorage.getItem(storageKey);
+                    if (savedSeenAt && Number.isFinite(Date.parse(savedSeenAt))) {
+                        setActivitySeenAt(savedSeenAt);
+                        return;
+                    }
+                    const initialSeenAt = getInitialActivitySeenAt(data.notifications);
+                    localStorage.setItem(storageKey, initialSeenAt);
+                    setActivitySeenAt(initialSeenAt);
+                } catch (error) {
+                    console.error('[Notifications] No se pudo inicializar la bandeja de novedades:', error);
+                    const fallbackSeenAt = getInitialActivitySeenAt(data.notifications);
+                    setActivitySeenAt(fallbackSeenAt);
+                    addToast('No se pudo guardar el estado de lectura en este navegador.', 'error');
+                }
+            }, [dataReady, coupleId, dataUserId, session?.user?.id, data.notifications, addToast]);
+
+            const unseenActivities = useMemo(
+                () => getUnseenActivities(data.notifications, activitySeenAt),
+                [data.notifications, activitySeenAt]
+            );
+            const markActivitiesAsSeen = useCallback(() => {
+                const newestTimestamp = getNewestActivityTimestamp(unseenActivities);
+                if (!newestTimestamp || !coupleId) return;
+                try {
+                    localStorage.setItem(`nuestro_universo_activity_seen_${coupleId}`, newestTimestamp);
+                    setActivitySeenAt(newestTimestamp);
+                } catch (error) {
+                    console.error('[Notifications] No se pudo guardar el estado de lectura:', error);
+                    addToast('No se pudieron marcar las novedades como vistas.', 'error');
+                }
+            }, [unseenActivities, coupleId, addToast]);
 
             useEffect(() => {
                 if (guideTourOpen) {
@@ -1155,6 +1199,12 @@
                                 </div>
                             )}
                             <main className="pt-16 pb-8 px-4 md:px-6 max-w-6xl mx-auto">
+                                <ActivityInbox activities={unseenActivities}
+                                    onMarkSeen={markActivitiesAsSeen}
+                                    onOpen={() => {
+                                        markActivitiesAsSeen();
+                                        setCurrentSection('notifications');
+                                    }} />
                                 {currentSection === 'home' && <HomeSection data={data} setData={setData}
                                     onNavigate={setCurrentSection} />}
                                 {currentSection === 'memories' && <MemoriesSection data={data} setData={setData}
@@ -1187,6 +1237,7 @@
                                     setData={setData} />}
                                 {currentSection === 'notifications' && <NotificationsSection data={data}
                                     setData={setData} coupleId={coupleId} pushEnabled={pushEnabled}
+                                    onClearNotifications={markActivitiesAsSeen}
                                     onEnablePush={async () => {
                                         const subscription = await enablePushNotifications();
                                         setPushEnabled(Boolean(subscription));
@@ -1212,6 +1263,45 @@
                         }}
                         onClose={closeGuideTour} />}
                 </div>
+            );
+        };
+
+        const ActivityInbox = ({ activities, onMarkSeen, onOpen }) => {
+            if (!activities.length) return null;
+            const visibleActivities = activities.slice(0, 4);
+
+            return (
+                <section className="glass-card activity-inbox p-4 md:p-5 mb-6"
+                    role="status" aria-live="polite" aria-labelledby="activity-inbox-title">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="min-w-0">
+                            <p className="text-xs text-cyan-300 mb-1">Novedades desde tu última visita</p>
+                            <h2 id="activity-inbox-title" className="font-semibold text-lg">
+                                Tienes {activities.length} {activities.length === 1 ? 'aviso nuevo' : 'avisos nuevos'}
+                            </h2>
+                            <ul className="mt-3 space-y-2">
+                                {visibleActivities.map(activity => (
+                                    <li key={activity.id} className="text-sm text-gray-200 flex items-start gap-2">
+                                        <span aria-hidden="true">🔹</span>
+                                        <span className="min-w-0">
+                                            {activity.message}
+                                            <span className="block text-xs text-gray-500 mt-0.5">{activity.sentDate}</span>
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {activities.length > visibleActivities.length && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Y {activities.length - visibleActivities.length} más en Avisos.
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:justify-end shrink-0">
+                            <button className="btn-primary btn-sm" onClick={onOpen}>Ver avisos</button>
+                            <button className="btn-ghost btn-sm" onClick={onMarkSeen}>Marcar como vistas</button>
+                        </div>
+                    </div>
+                </section>
             );
         };
 
@@ -1560,7 +1650,7 @@
                     id: 'notifications',
                     icon: '🔔',
                     title: 'Avisos',
-                    description: 'Consulta los avisos disponibles y activa o desactiva las notificaciones push para este dispositivo. Para recibirlas fuera de la app, el navegador debe admitirlas, estar en HTTPS y tener el permiso concedido. “Limpiar todo” limpia la lista local de avisos de este dispositivo.'
+                    description: 'Al entrar al espacio verás las novedades compartidas desde tu última visita en este navegador. Consulta también el historial de avisos y activa o desactiva las notificaciones push para este dispositivo. Para recibirlas fuera de la app, el navegador debe admitirlas, estar en HTTPS y tener el permiso concedido. “Limpiar todo” limpia la lista local de avisos de este dispositivo.'
                 },
                 {
                     id: 'settings',
@@ -2936,7 +3026,9 @@ const handleAdd = async () => {
         };
 
         // ==================== NOTIFICATIONS SECTION ====================
-        const NotificationsSection = ({ data, setData, coupleId, pushEnabled, onEnablePush, onDisablePush }) => {
+        const NotificationsSection = ({
+            data, setData, coupleId, pushEnabled, onEnablePush, onDisablePush, onClearNotifications
+        }) => {
             const addToast = useToast();
             const [pushLoading, setPushLoading] = useState(false);
             const [pushError, setPushError] = useState('');
@@ -2947,6 +3039,7 @@ const handleAdd = async () => {
                 try {
                     localStorage.setItem(`nuestro_universo_notifications_cleared_${coupleId}`, new Date().toISOString());
                     setData(prev => ({ ...prev, notifications: [] }));
+                    onClearNotifications();
                     addToast('Notificaciones limpiadas en este dispositivo.', 'info');
                 } catch (error) {
                     addToast(`No se pudieron limpiar las notificaciones: ${error.message}`, 'error');
