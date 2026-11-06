@@ -1145,6 +1145,7 @@
                                         await disablePushNotifications();
                                         setPushEnabled(false);
                                     }} />}
+                                {currentSection === 'guide' && <GuideSection onNavigate={setCurrentSection} />}
                             </main>
                     </div>
                     {modalContent && <Modal content={modalContent} onClose={() => setModalContent(null)}
@@ -1169,7 +1170,8 @@
                 { id: 'dailymessage', icon: '💭', label: 'Mensaje' },
                 { id: 'anniversaries', icon: '🎊', label: 'Momentos' },
                 { id: 'notifications', icon: '🔔', label: 'Avisos' },
-                { id: 'settings', icon: '⚙️', label: 'Fechas' },
+                { id: 'settings', icon: '⚙️', label: 'Configuración' },
+                { id: 'guide', icon: '📖', label: 'Guía' },
             ];
             return (
                 <nav className="fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-t-0 border-x-0"
@@ -1222,6 +1224,133 @@
                         </div>
                     )}
                 </nav>
+            );
+        };
+
+        // ==================== USER GUIDE ====================
+        const GuideSection = ({ onNavigate }) => {
+            const topics = [
+                {
+                    id: 'home',
+                    icon: '🏠',
+                    title: 'Inicio',
+                    description: 'Es la portada de su espacio: muestra sus nombres y logo, la frase principal, los días juntos, la cuenta regresiva al próximo aniversario y un mensaje del día. Usa las tarjetas para entrar rápidamente a Recuerdos, Cartas, Fotos, Música, Sueños y Cápsulas.'
+                },
+                {
+                    id: 'memories',
+                    icon: '⭐',
+                    title: 'Recuerdos',
+                    description: 'Guarden momentos importantes con un emoji, título, fecha e historia. Pulsa “Nueva Estrella” para crear uno; selecciona una tarjeta para editarla y usa la papelera para borrarla.'
+                },
+                {
+                    id: 'photos',
+                    icon: '📸',
+                    title: 'Fotos',
+                    description: 'Añadan fotos con título y, si quieren, fecha y descripción. Pueden elegir una imagen del dispositivo o pegar un enlace. Cada tarjeta tiene una opción para eliminarla.'
+                },
+                {
+                    id: 'letters',
+                    icon: '💌',
+                    title: 'Cartas',
+                    description: 'Escriban cartas con título y contenido, y guárdenlas en categorías como “Cuando me extrañes”, “Cuando estés triste”, “Cuando estés feliz” o “General/Dedicatorias”. Elijan una categoría para filtrar, pulsen una carta para leerla y ábranla para poder eliminarla.'
+                },
+                {
+                    id: 'songs',
+                    icon: '🎵',
+                    title: 'Música',
+                    description: 'Creen una playlist de canciones especiales con nombre, artista y el motivo por el que la eligieron. De forma opcional, agreguen enlaces de Spotify o YouTube, o suban un archivo de audio para reproducirlo desde la tarjeta.'
+                },
+                {
+                    id: 'dreams',
+                    icon: '🌙',
+                    title: 'Sueños',
+                    description: 'Anoten planes y metas compartidas. Marquen un sueño como cumplido cuando lo logren; pueden devolverlo a pendientes o eliminarlo.'
+                },
+                {
+                    id: 'timecapsule',
+                    icon: '📦',
+                    title: 'Cápsula del tiempo',
+                    description: 'Escriban un título y mensaje, y elijan una fecha de revelación. La cápsula queda sellada hasta esa fecha y después se muestra su mensaje. Una cápsula también se puede eliminar.'
+                },
+                {
+                    id: 'dailymessage',
+                    icon: '💭',
+                    title: 'Mensajes del día',
+                    description: 'Añadan frases cortas a su colección. Al visitar Inicio, la app elige una al azar para mostrarla; pueden quitar frases que ya no quieran conservar.'
+                },
+                {
+                    id: 'anniversaries',
+                    icon: '🎊',
+                    title: 'Momentos',
+                    description: 'Consulta los aniversarios calculados a partir de la fecha de inicio. En cada aniversario, guarda un momento destacado y notas; puedes volver a editar ese recuerdo más adelante.'
+                },
+                {
+                    id: 'notifications',
+                    icon: '🔔',
+                    title: 'Avisos',
+                    description: 'Consulta los avisos disponibles y activa o desactiva las notificaciones push para este dispositivo. Para recibirlas fuera de la app, el navegador debe admitirlas, estar en HTTPS y tener el permiso concedido. “Limpiar todo” limpia la lista local de avisos de este dispositivo.'
+                },
+                {
+                    id: 'settings',
+                    icon: '⚙️',
+                    title: 'Configuración y fechas',
+                    description: 'Personaliza los nombres, la fecha de inicio de la relación, la frase principal, la zona horaria de recordatorios y el logo (imagen de hasta 5 MB). Elige quién usa la app en este navegador para identificar a la persona en las notificaciones. Aquí también puedes añadir, editar o eliminar fechas especiales, guardar un nombre de usuario para iniciar sesión y generar un código de recuperación.'
+                }
+            ];
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="glass-card p-6 md:p-8">
+                        <p className="text-sm text-cyan-300 mb-2">📖 Centro de ayuda</p>
+                        <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">Guía para usar Nuestro Universo</h2>
+                        <p className="text-gray-300 leading-relaxed">
+                            Este espacio es compartido: ambos pueden entrar con el mismo usuario y contraseña para ver y actualizar los recuerdos de la pareja. Los cambios se guardan en la cuenta y se sincronizan entre sus dispositivos cuando hay conexión.
+                        </p>
+                    </div>
+
+                    <section className="glass-card p-5 md:p-6 space-y-4">
+                        <h3 className="font-semibold text-lg">✨ Primeros pasos</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300">
+                            <li>Inicien sesión o creen la cuenta compartida de la pareja.</li>
+                            <li>En Configuración, escriban sus nombres, indiquen la fecha de inicio y elijan la zona horaria correcta.</li>
+                            <li>Personalicen la frase y el logo, y agreguen sus primeras fechas especiales.</li>
+                            <li>En cada dispositivo, elijan quién lo usa en Configuración para atribuir correctamente los cambios compartidos.</li>
+                            <li>Exploren las secciones y agreguen fotos, cartas, canciones, metas y recuerdos.</li>
+                            <li>Si desean avisos fuera de la app, activen las notificaciones en cada dispositivo y acepten el permiso del navegador.</li>
+                        </ol>
+                        <button className="btn-primary btn-sm" onClick={() => onNavigate('settings')}>
+                            Ir a Configuración
+                        </button>
+                    </section>
+
+                    <section aria-labelledby="guide-sections-title">
+                        <h3 id="guide-sections-title" className="font-semibold text-lg mb-3">📚 Todas las funciones</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {topics.map(topic => (
+                                <article key={topic.id} className="glass-card p-5 flex flex-col items-start gap-3">
+                                    <h4 className="font-semibold text-cyan-100">{topic.icon} {topic.title}</h4>
+                                    <p className="text-sm text-gray-300 leading-relaxed flex-1">{topic.description}</p>
+                                    <button className="btn-ghost btn-sm" onClick={() => onNavigate(topic.id)}>
+                                        Abrir {topic.title}
+                                    </button>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
+
+                    <section className="glass-card p-5 md:p-6 space-y-3">
+                        <h3 className="font-semibold text-lg">🔐 Cuenta y recuperación</h3>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                            En Configuración puedes asignar un nombre de usuario a la cuenta y generar un código de recuperación. Guárdalo fuera del dispositivo: se muestra una sola vez, vence a los 30 minutos y solo se puede usar una vez. Al generar uno nuevo, el anterior deja de funcionar.
+                        </p>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                            Compartan las credenciales únicamente entre ustedes. Para proteger sus recuerdos, no creen ni compartan una cuenta con otra pareja.
+                        </p>
+                        <button className="btn-ghost btn-sm" onClick={() => onNavigate('settings')}>
+                            Administrar cuenta
+                        </button>
+                    </section>
+                </div>
             );
         };
 
