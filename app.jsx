@@ -795,6 +795,9 @@
             dataRef.current = data;
             const syncedDataRef = useRef(null);
             const [currentSection, setCurrentSection] = useState('home');
+            const [guideTourOpen, setGuideTourOpen] = useState(false);
+            const [guideTourStep, setGuideTourStep] = useState(0);
+            const guideTourStartedForRef = useRef(null);
             const [modalContent, setModalContent] = useState(null);
             const [pushEnabled, setPushEnabled] = useState(false);
             const [accountLoading, setAccountLoading] = useState(true);
@@ -843,6 +846,8 @@
                     setCoupleId(null);
                     setAccountUsername('');
                     setActiveMemberName('');
+                    setGuideTourOpen(false);
+                    guideTourStartedForRef.current = null;
                     localStorage.removeItem('nuestro_universo_active_couple_id');
                     setDataUserId(null);
                     setData(getInitialData());
@@ -893,6 +898,38 @@
                 prepareAccount();
                 return () => { active = false; };
             }, [session?.user?.id]);
+
+            useEffect(() => {
+                if (!dataReady || !coupleId || dataUserId !== session?.user?.id
+                    || guideTourStartedForRef.current === coupleId) return;
+                guideTourStartedForRef.current = coupleId;
+                const tourKey = `nuestro_universo_guide_completed_${coupleId}`;
+                try {
+                    if (localStorage.getItem(tourKey) === 'true') return;
+                } catch (error) {
+                    console.error('No se pudo consultar si ya se mostró la guía:', error);
+                    addToast('No se pudo guardar el avance de la guía en este navegador.', 'error');
+                }
+                setGuideTourStep(0);
+                setGuideTourOpen(true);
+            }, [dataReady, coupleId, dataUserId, session?.user?.id, addToast]);
+
+            useEffect(() => {
+                if (guideTourOpen) {
+                    setCurrentSection(GUIDE_TOUR_STEPS[guideTourStep].section);
+                }
+            }, [guideTourOpen, guideTourStep]);
+
+            const closeGuideTour = () => {
+                setGuideTourOpen(false);
+                if (!coupleId) return;
+                try {
+                    localStorage.setItem(`nuestro_universo_guide_completed_${coupleId}`, 'true');
+                } catch (error) {
+                    console.error('No se pudo guardar que la guía ya se mostró:', error);
+                    addToast('No se pudo guardar el avance de la guía; podría volver a mostrarse al entrar.', 'error');
+                }
+            };
 
             const handleActiveMemberChange = memberName => {
                 const normalizedName = memberName.trim();
@@ -1145,11 +1182,22 @@
                                         await disablePushNotifications();
                                         setPushEnabled(false);
                                     }} />}
-                                {currentSection === 'guide' && <GuideSection onNavigate={setCurrentSection} />}
+                                {currentSection === 'guide' && <GuideSection onNavigate={setCurrentSection}
+                                    onStartTour={() => {
+                                        setGuideTourStep(0);
+                                        setGuideTourOpen(true);
+                                    }} />}
                             </main>
                     </div>
                     {modalContent && <Modal content={modalContent} onClose={() => setModalContent(null)}
                         data={data} setData={setData} />}
+                    {guideTourOpen && <GuideTour stepIndex={guideTourStep}
+                        onPrevious={() => setGuideTourStep(index => Math.max(0, index - 1))}
+                        onNext={() => {
+                            if (guideTourStep === GUIDE_TOUR_STEPS.length - 1) closeGuideTour();
+                            else setGuideTourStep(index => index + 1);
+                        }}
+                        onClose={closeGuideTour} />}
                 </div>
             );
         };
@@ -1187,7 +1235,8 @@
                         </button>
                         <div className="hidden md:flex items-center gap-1 flex-wrap justify-center">
                             {sections.map(s => (
-                                <button key={s.id} onClick={() => onNavigate(s.id)}
+                                <button key={s.id} data-guide-target={`nav-${s.id}`}
+                                    onClick={() => onNavigate(s.id)}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
                                         currentSection === s.id
                                             ? 'bg-gradient-to-r from-blue-500/40 to-cyan-500/40 text-white border border-cyan-400/40'
@@ -1211,7 +1260,8 @@
                     {mobileOpen && (
                         <div className="md:hidden px-4 pb-3 flex flex-wrap gap-1.5">
                             {sections.map(s => (
-                                <button key={s.id} onClick={() => { onNavigate(s.id);
+                                <button key={s.id} data-guide-target={`nav-${s.id}`}
+                                    onClick={() => { onNavigate(s.id);
                                         setMobileOpen(false); }}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                                         currentSection === s.id
@@ -1228,7 +1278,216 @@
         };
 
         // ==================== USER GUIDE ====================
-        const GuideSection = ({ onNavigate }) => {
+        const GUIDE_TOUR_STEPS = [
+            {
+                section: 'home',
+                target: 'tour-home',
+                icon: '✨',
+                title: 'Bienvenidos a su espacio',
+                description: 'Este es el inicio de su universo. Aquí verán sus nombres, los días juntos, el próximo aniversario y el mensaje del día. El recorrido no cambia ni borra sus datos.'
+            },
+            {
+                section: 'memories',
+                target: 'tour-memories',
+                icon: '⭐',
+                title: 'Guarden sus recuerdos',
+                description: 'Cada recuerdo puede tener un emoji, un título, una fecha y su historia. Si ven contenido de ejemplo, pueden abrirlo para editarlo o usar la papelera para eliminarlo.'
+            },
+            {
+                section: 'photos',
+                target: 'tour-photos',
+                icon: '📸',
+                title: 'Construyan su galería',
+                description: 'Suban una foto desde el dispositivo o peguen un enlace. Añadan título, fecha y descripción para volver a encontrar cada momento.'
+            },
+            {
+                section: 'letters',
+                target: 'tour-letters',
+                icon: '💌',
+                title: 'Escriban cartas',
+                description: 'Clasifiquen sus cartas por ocasión, ábranlas para leerlas y eliminen las que ya no quieran conservar.'
+            },
+            {
+                section: 'songs',
+                target: 'tour-songs',
+                icon: '🎵',
+                title: 'Compartan su música',
+                description: 'Añadan canciones con artista y motivo, y opcionalmente enlaces de Spotify o YouTube o un archivo de audio.'
+            },
+            {
+                section: 'dreams',
+                target: 'tour-dreams',
+                icon: '🌙',
+                title: 'Planeen sueños juntos',
+                description: 'Escriban metas compartidas. Cuando las cumplan, márquenlas como realizadas; también pueden devolverlas a pendientes.'
+            },
+            {
+                section: 'timecapsule',
+                target: 'tour-timecapsule',
+                icon: '📦',
+                title: 'Escriban al futuro',
+                description: 'Creen una cápsula con mensaje y fecha de revelación. El mensaje queda oculto hasta la fecha elegida.'
+            },
+            {
+                section: 'dailymessage',
+                target: 'tour-dailymessage',
+                icon: '💭',
+                title: 'Elijan el mensaje del día',
+                description: 'Añadan frases personales; la portada escogerá una al azar cada vez que la visiten.'
+            },
+            {
+                section: 'anniversaries',
+                target: 'tour-anniversaries',
+                icon: '🎊',
+                title: 'Conserven cada aniversario',
+                description: 'La galería se calcula usando la fecha de inicio. En cada aniversario pueden guardar un momento destacado y notas.'
+            },
+            {
+                section: 'notifications',
+                target: 'tour-notifications',
+                icon: '🔔',
+                title: 'Configuren sus avisos',
+                description: 'Activen Push en cada dispositivo si desean recibir avisos fuera de la app. El navegador debe admitirlos y tener el permiso concedido.'
+            },
+            {
+                section: 'settings',
+                target: 'tour-settings',
+                icon: '⚙️',
+                title: 'Personalicen la cuenta',
+                description: 'Reemplacen los nombres, la fecha, la frase y la zona horaria por sus datos reales. Elijan quién usa este navegador para atribuir los cambios. También pueden administrar fechas, usuario y código de recuperación.'
+            },
+            {
+                section: 'settings',
+                target: 'tour-settings',
+                icon: '📖',
+                title: '¡Listos para empezar!',
+                description: 'El recorrido no modificó ningún dato. Vuelvan a iniciarlo cuando quieran desde Guía; en Configuración pueden editar o borrar los elementos de ejemplo y agregar los suyos.'
+            }
+        ];
+
+        const GuideTour = ({ stepIndex, onPrevious, onNext, onClose }) => {
+            const [targetRect, setTargetRect] = useState(null);
+            const step = GUIDE_TOUR_STEPS[stepIndex];
+
+            useEffect(() => {
+                let observer;
+                let animationFrame;
+                let scrollTimer;
+                let attempts = 0;
+                let target;
+                const updatePosition = () => {
+                    if (!target) return;
+                    const rect = target.getBoundingClientRect();
+                    if (rect.width && rect.height) {
+                        setTargetRect({
+                            top: Math.max(8, rect.top - 8),
+                            left: Math.max(8, rect.left - 8),
+                            right: Math.min(window.innerWidth - 8, rect.right + 8),
+                            bottom: Math.min(window.innerHeight - 8, rect.bottom + 8)
+                        });
+                    }
+                };
+                const locateTarget = () => {
+                    target = document.querySelector(`[data-guide-target="${step.target}"]`)
+                        || document.querySelector(`[data-guide-target="nav-${step.section}"]`);
+                    if (!target && attempts < 12) {
+                        attempts += 1;
+                        animationFrame = requestAnimationFrame(locateTarget);
+                        return;
+                    }
+                    if (!target) {
+                        setTargetRect(null);
+                        return;
+                    }
+                    const rect = target.getBoundingClientRect();
+                    if (rect.top < 72 || rect.bottom > window.innerHeight - 210) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    updatePosition();
+                    scrollTimer = window.setTimeout(updatePosition, 350);
+                    observer = new ResizeObserver(updatePosition);
+                    observer.observe(target);
+                    window.addEventListener('scroll', updatePosition, true);
+                    window.addEventListener('resize', updatePosition);
+                };
+                setTargetRect(null);
+                animationFrame = requestAnimationFrame(locateTarget);
+                return () => {
+                    cancelAnimationFrame(animationFrame);
+                    window.clearTimeout(scrollTimer);
+                    observer?.disconnect();
+                    window.removeEventListener('scroll', updatePosition, true);
+                    window.removeEventListener('resize', updatePosition);
+                };
+            }, [step.target, step.section]);
+
+            useEffect(() => {
+                const handleKeyDown = event => {
+                    if (event.key === 'Escape') onClose();
+                    if (event.key === 'ArrowRight') onNext();
+                    if (event.key === 'ArrowLeft' && stepIndex > 0) onPrevious();
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [onClose, onNext, onPrevious, stepIndex]);
+
+            const maskStyles = targetRect ? [
+                { top: 0, left: 0, right: 0, height: targetRect.top },
+                { top: targetRect.top, left: 0, width: targetRect.left, height: targetRect.bottom - targetRect.top },
+                { top: targetRect.top, left: targetRect.right, right: 0, height: targetRect.bottom - targetRect.top },
+                { top: targetRect.bottom, left: 0, right: 0, bottom: 0 }
+            ] : [{ inset: 0 }];
+
+            return (
+                <div className="guide-tour" role="presentation">
+                    {maskStyles.map((style, index) => (
+                        <div key={index} className="guide-tour-mask" style={style} />
+                    ))}
+                    {targetRect && (
+                        <div className="guide-tour-spotlight" style={{
+                            top: targetRect.top,
+                            left: targetRect.left,
+                            width: targetRect.right - targetRect.left,
+                            height: targetRect.bottom - targetRect.top
+                        }} />
+                    )}
+                    <section className="guide-tour-card" role="dialog" aria-modal="true"
+                        aria-labelledby="guide-tour-title" aria-describedby="guide-tour-description">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <p className="text-xs text-cyan-300 mb-1">
+                                    Recorrido interactivo · {stepIndex + 1} de {GUIDE_TOUR_STEPS.length}
+                                </p>
+                                <h2 id="guide-tour-title" className="font-display text-xl md:text-2xl font-bold">
+                                    {step.icon} {step.title}
+                                </h2>
+                            </div>
+                            <button className="btn-ghost btn-sm" onClick={onClose} aria-label="Cerrar recorrido">
+                                ✕
+                            </button>
+                        </div>
+                        <p id="guide-tour-description" className="text-sm text-gray-300 leading-relaxed mt-3">
+                            {step.description}
+                        </p>
+                        <div className="flex items-center justify-between gap-3 mt-5">
+                            <button className="text-xs text-gray-400 hover:text-white" onClick={onClose}>
+                                Omitir recorrido
+                            </button>
+                            <div className="flex gap-2">
+                                <button className="btn-ghost btn-sm" onClick={onPrevious} disabled={stepIndex === 0}>
+                                    Atrás
+                                </button>
+                                <button className="btn-primary btn-sm" onClick={onNext}>
+                                    {stepIndex === GUIDE_TOUR_STEPS.length - 1 ? 'Terminar' : 'Siguiente'}
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+        };
+
+        const GuideSection = ({ onNavigate, onStartTour }) => {
             const topics = [
                 {
                     id: 'home',
@@ -1304,8 +1563,11 @@
                         <p className="text-sm text-cyan-300 mb-2">📖 Centro de ayuda</p>
                         <h2 className="font-display text-2xl md:text-3xl font-bold mb-3">Guía para usar Nuestro Universo</h2>
                         <p className="text-gray-300 leading-relaxed">
-                            Este espacio es compartido: ambos pueden entrar con el mismo usuario y contraseña para ver y actualizar los recuerdos de la pareja. Los cambios se guardan en la cuenta y se sincronizan entre sus dispositivos cuando hay conexión.
+                            Este espacio es compartido: ambos pueden entrar con el mismo usuario y contraseña para ver y actualizar los recuerdos de la pareja. Los cambios se guardan en la cuenta y se sincronizan entre sus dispositivos cuando hay conexión. El recorrido interactivo señala cada sección y no modifica ni elimina sus datos.
                         </p>
+                        <button className="btn-primary btn-sm mt-4" onClick={onStartTour}>
+                            ▶ Iniciar recorrido interactivo
+                        </button>
                     </div>
 
                     <section className="glass-card p-5 md:p-6 space-y-4">
@@ -1313,6 +1575,7 @@
                         <ol className="list-decimal list-inside space-y-2 text-sm text-gray-300">
                             <li>Inicien sesión o creen la cuenta compartida de la pareja.</li>
                             <li>En Configuración, escriban sus nombres, indiquen la fecha de inicio y elijan la zona horaria correcta.</li>
+                            <li>Los campos iniciales están vacíos. Si ven datos de ejemplo o información de una cuenta anterior, edítenlos en su sección; el recorrido nunca los cambiará.</li>
                             <li>Personalicen la frase y el logo, y agreguen sus primeras fechas especiales.</li>
                             <li>En cada dispositivo, elijan quién lo usa en Configuración para atribuir correctamente los cambios compartidos.</li>
                             <li>Exploren las secciones y agreguen fotos, cartas, canciones, metas y recuerdos.</li>
@@ -1390,7 +1653,8 @@
             return (
                 <div className="space-y-6 animate-fadeIn">
                     {/* Hero */}
-                    <div className="glass-card p-6 md:p-10 text-center relative overflow-hidden">
+                    <div data-guide-target="tour-home"
+                        className="glass-card p-6 md:p-10 text-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-purple-500/10 pointer-events-none"></div>
                         <div className="relative z-10">
 <div className="w-24 h-24 md:w-32 md:h-32 mx-auto rounded-full mb-4 border-2 border-white/20 animate-pulse-glow overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-500/30 to-cyan-400/20">
@@ -1489,7 +1753,8 @@
                 <div className="space-y-6 animate-fadeIn">
                     <div className="flex items-center justify-between">
                         <h2 className="font-display text-2xl md:text-3xl font-bold">⭐ Mapa Estelar de Recuerdos</h2>
-                        <button onClick={() => openEdit()} className="btn-primary btn-sm">+ Nueva Estrella</button>
+                        <button data-guide-target="tour-memories" onClick={() => openEdit()}
+                            className="btn-primary btn-sm">+ Nueva Estrella</button>
                     </div>
                     <p className="text-gray-400 text-sm">Cada estrella es un momento especial. Haz clic para ver los detalles.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1646,7 +1911,8 @@ const handleAdd = async () => {
                 <div className="space-y-6 animate-fadeIn">
                     <div className="flex items-center justify-between">
                         <h2 className="font-display text-2xl md:text-3xl font-bold">📸 Galería de Fotos</h2>
-                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                        <button data-guide-target="tour-photos" onClick={() => setShowForm(!showForm)}
+                            className="btn-primary btn-sm">
                             {showForm ? 'Cancelar' : '+ Añadir Foto'}
                         </button>
                     </div>
@@ -1761,7 +2027,8 @@ const handleAdd = async () => {
                             </button>
                         ))}
                     </div>
-                    <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                    <button data-guide-target="tour-letters" onClick={() => setShowForm(!showForm)}
+                        className="btn-primary btn-sm">
                         {showForm ? 'Cancelar' : '+ Nueva Carta'}
                     </button>
                     {showForm && (
@@ -1916,7 +2183,8 @@ const handleAdd = async () => {
                 <div className="space-y-6 animate-fadeIn">
                     <div className="flex items-center justify-between">
                         <h2 className="font-display text-2xl md:text-3xl font-bold">🎵 Música Especial</h2>
-                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                        <button data-guide-target="tour-songs" onClick={() => setShowForm(!showForm)}
+                            className="btn-primary btn-sm">
                             {showForm ? 'Cancelar' : '+ Añadir Canción'}
                         </button>
                     </div>
@@ -2024,7 +2292,7 @@ const handleAdd = async () => {
                 <div className="space-y-6 animate-fadeIn">
                     <h2 className="font-display text-2xl md:text-3xl font-bold">🌙 Sueños Pendientes</h2>
                     <div className="flex gap-2">
-                        <input placeholder="Nuevo sueño compartido..." value={newDream} onChange={e => setNewDream(e.target
+                        <input data-guide-target="tour-dreams" placeholder="Nuevo sueño compartido..." value={newDream} onChange={e => setNewDream(e.target
                                 .value)}
                             onKeyDown={e => e.key === 'Enter' && handleAdd()} className="flex-1" />
                         <button onClick={handleAdd} className="btn-primary">Añadir</button>
@@ -2087,7 +2355,8 @@ const handleAdd = async () => {
                 <div className="space-y-6 animate-fadeIn">
                     <div className="flex items-center justify-between">
                         <h2 className="font-display text-2xl md:text-3xl font-bold">📦 Cápsula del Tiempo</h2>
-                        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm">
+                        <button data-guide-target="tour-timecapsule" onClick={() => setShowForm(!showForm)}
+                            className="btn-primary btn-sm">
                             {showForm ? 'Cancelar' : '+ Nueva Cápsula'}
                         </button>
                     </div>
@@ -2157,7 +2426,7 @@ const handleAdd = async () => {
                     <h2 className="font-display text-2xl md:text-3xl font-bold">💭 Mensajes del Día</h2>
                     <p className="text-gray-400 text-sm">Frases que aparecerán aleatoriamente al visitar la página.</p>
                     <div className="flex gap-2">
-                        <input placeholder="Nuevo mensaje..." value={newMsg} onChange={e => setNewMsg(e.target.value)}
+                        <input data-guide-target="tour-dailymessage" placeholder="Nuevo mensaje..." value={newMsg} onChange={e => setNewMsg(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleAdd()} className="flex-1" />
                         <button onClick={handleAdd} className="btn-primary">Añadir</button>
                     </div>
@@ -2360,7 +2629,7 @@ const handleAdd = async () => {
                     <h2 className="font-display text-2xl md:text-3xl font-bold">⚙️ Configuración</h2>
 
                     {/* Couple Info */}
-                    <div className="glass-card p-5 space-y-4">
+                    <div data-guide-target="tour-settings" className="glass-card p-5 space-y-4">
                         <h3 className="font-semibold text-lg">👫 Información de la Pareja</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -2585,7 +2854,8 @@ const handleAdd = async () => {
 
             return (
                 <div className="space-y-6 animate-fadeIn">
-                    <h2 className="font-display text-2xl md:text-3xl font-bold">🎊 Galería de Momentos Especiales</h2>
+                    <h2 data-guide-target="tour-anniversaries"
+                        className="font-display text-2xl md:text-3xl font-bold">🎊 Galería de Momentos Especiales</h2>
                     <p className="text-gray-400 text-sm">Resumen de todos los aniversarios que han compartido.</p>
                     {anniversaries.length === 0 ? (
                         <p className="text-center text-gray-500 py-8">Aún no han celebrado su primer aniversario.</p>
@@ -2686,7 +2956,7 @@ const handleAdd = async () => {
                             <button onClick={handleClear} className="btn-ghost btn-sm">Limpiar todo</button>
                         )}
                     </div>
-                    <div className="glass-card p-5 space-y-3">
+                    <div data-guide-target="tour-notifications" className="glass-card p-5 space-y-3">
                         <h3 className="font-semibold">Notificaciones en este dispositivo</h3>
                         <p className="text-sm text-gray-400">
                             Activa las notificaciones para recibir avisos de fechas, cápsulas del tiempo y cambios compartidos, incluso cuando la aplicación esté cerrada.
